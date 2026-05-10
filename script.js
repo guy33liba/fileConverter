@@ -1,12 +1,19 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
-const imageExtensions = ['image/png', 'image/jpeg', 'image/webp'];
+const imageExtensions = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
 const mimeExtensions = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
-  'image/webp': 'webp'
+  'image/webp': 'webp',
+  'image/avif': 'avif'
+};
+const pdfImageOutputTypes = {
+  'pdf-to-png': 'image/png',
+  'pdf-to-jpg': 'image/jpeg',
+  'pdf-to-webp': 'image/webp'
 };
 
 const elements = { 
@@ -140,7 +147,7 @@ async function handleSelectedFile(file) {
   if (!isPdf && !isSupportedImage(file)) {
     selectedFile = null;
     elements.fileInput.value = '';
-    showError('Unsupported file type. Please upload a PDF or image (PNG, JPG, WebP).');
+    showError('Unsupported file type. Please upload a PDF or image (PNG, JPG, WebP, AVIF).');
     return;
   }
 
@@ -436,7 +443,10 @@ async function convertPdfToImages(outputType) {
     
     setStatus(80, 'Converting', `Creating ${outputType.replace('pdf-to-', '').toUpperCase()} file...`);
     
-    const mimeType = outputType.replace('pdf-to-', 'image/');
+    const mimeType = pdfImageOutputTypes[outputType];
+    if (!mimeType) {
+      throw new Error(`Unsupported PDF output type: ${outputType}`);
+    }
     const quality = Number(elements.qualityInput.value) / 100;
     const blob = await canvasToBlob(canvas, mimeType, quality);
     
@@ -490,11 +500,11 @@ function showTextPreview(text) {
 function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
-      if (blob) {
+      if (blob && (type === 'image/png' || !blob.type || blob.type === type)) {
         resolve(blob);
         return;
       }
-      reject(new Error('Canvas conversion failed'));
+      reject(new Error(`Canvas conversion failed for ${type}`));
     }, type, quality);
   });
 }
@@ -617,7 +627,7 @@ function stopAnimation() {
 }
 
 function isSupportedImage(file) {
-  return imageExtensions.includes(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name);
+  return imageExtensions.includes(file.type) || /\.(png|jpe?g|webp|avif)$/i.test(file.name);
 }
 
 function getFormatName(type) {
