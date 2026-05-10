@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Upload Component</title>
+  <meta name="description" content="Modern drag-and-drop PDF upload component built with HTML, CSS, and JavaScript.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">Secure PDF intake</p>
+      <h1 id="page-title">Upload your PDF</h1>
+      <p class="hero-text">A clean drag-and-drop upload component with validation, file preview, animation, and clear error handling.</p>
+    </section>
+
+    <section class="upload-card" aria-label="PDF upload component">
+      <div id="message" class="message hidden" role="alert"></div>
+
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload PDF by clicking or dragging">
+        <input id="file-input" class="file-input" type="file" accept="application/pdf,.pdf" aria-label="Choose a PDF file">
+
+        <div class="upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 3v5h5"/>
+            <path d="M12 18v-7"/>
+            <path d="m8.5 14.5 3.5-3.5 3.5 3.5"/>
+          </svg>
+        </div>
+
+        <h2>Drop PDF file here</h2>
+        <p>Drag and drop your PDF, or choose a file from your device.</p>
+        <button id="upload-button" class="button" type="button">Choose PDF</button>
+      </div>
+
+      <section id="file-panel" class="file-panel hidden" aria-live="polite">
+        <div class="file-meta">
+          <span class="label">Selected file</span>
+          <strong id="file-name">No file selected</strong>
+          <small id="file-size"></small>
+        </div>
+        <button id="remove-button" class="button button-secondary" type="button">Remove</button>
+      </section>
+
+      <section id="upload-status" class="upload-status hidden" aria-live="polite">
+        <div class="status-header">
+          <span id="status-title">Uploading</span>
+          <span id="status-percent">0%</span>
+        </div>
+        <div class="progress-bar" aria-hidden="true">
+          <div id="progress-fill"></div>
+        </div>
+        <p id="status-text">Checking your PDF...</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
