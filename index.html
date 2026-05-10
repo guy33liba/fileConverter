@@ -1,122 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>File Converter</title>
-  <meta name="description" content="Convert files between PNG, JPG, WebP, and PDF in your browser.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <main class="page-shell">
-    <section class="hero" aria-labelledby="page-title">
-      <p class="eyebrow">Browser file converter</p>
-      <h1 id="page-title">Convert your files</h1>
-      <p class="hero-text">Convert images between PNG, JPG, and WebP. Convert PDFs to images or extract text.</p>
-    </section>
-
-    <section class="upload-card" aria-label="File converter">
-      <div id="message" class="message hidden" role="alert"></div>
-
-      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload file by clicking or dragging">
-        <input id="file-input" class="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.avif" aria-label="Choose a file">
-
-        <div class="upload-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-            <rect x="3" y="5" width="18" height="14" rx="2"/>
-            <circle cx="8.5" cy="10" r="1.5"/>
-            <path d="m21 15-4.4-4.4a2 2 0 0 0-2.8 0L5 19"/>
-          </svg>
-        </div>
-
-        <h2>Drop file here</h2>
-        <p>Upload a PDF or image file (PNG, JPG, WebP).</p>
-        <button id="upload-button" class="button" type="button">Choose File</button>
-      </div>
-
-      <section id="file-panel" class="file-panel hidden" aria-live="polite">
-        <div class="file-meta">
-          <span class="label">Selected file</span>
-          <strong id="file-name">No file selected</strong>
-          <small id="file-size"></small>
-        </div>
-        <div class="file-actions">
-          <button id="download-original-button" class="button" type="button">Download Original</button>
-          <button id="remove-button" class="button button-secondary" type="button">Remove</button>
-        </div>
-      </section>
-
-      <section id="converter-panel" class="converter-panel hidden" aria-label="Conversion settings">
-        <div class="converter-grid">
-          <label class="control-group" for="output-type-select">
-            <span class="label">Output format</span>
-            <select id="output-type-select">
-              <optgroup label="Image to Image">
-                <option value="image/png">PNG</option>
-                <option value="image/jpeg">JPG</option>
-                <option value="image/webp">WebP</option>
-              </optgroup>
-              <optgroup label="From PDF">
-                <option value="pdf-to-png">PDF to PNG</option>
-                <option value="pdf-to-jpg">PDF to JPG</option>
-                <option value="pdf-to-webp">PDF to WebP</option>
-                <option value="pdf-to-text">PDF to Text (TXT)</option>
-              </optgroup>
-            </select>
-          </label>
-
-          <label class="control-group" for="pdf-page-select" id="pdf-page-label" style="display:none;">
-            <span class="label">Page</span>
-            <select id="pdf-page-select">
-            </select>
-          </label>
-
-          <label class="control-group" for="quality-input" id="quality-label">
-            <span class="label">Quality <strong id="quality-value">92%</strong></span>
-            <input id="quality-input" type="range" min="40" max="100" value="92">
-          </label>
-        </div>
-
-        <button id="convert-button" class="button button-wide" type="button">Convert File</button>
-      </section>
-
-      <section id="upload-status" class="upload-status hidden" aria-live="polite">
-        <div class="status-header">
-          <span id="status-title">Ready</span>
-          <span id="status-percent">0%</span>
-        </div>
-        <div class="progress-bar" aria-hidden="true">
-          <div id="progress-fill"></div>
-        </div>
-        <p id="status-text">Choose a file to start.</p>
-      </section>
-
-      <section id="preview-panel" class="preview-panel hidden" aria-label="File previews">
-        <div class="preview-header">
-          <div>
-            <span class="label">Preview</span>
-            <strong id="preview-title">Original file</strong>
-          </div>
-          <button id="download-converted-button" class="button hidden" type="button">Download Converted</button>
-        </div>
-
-        <div class="preview-grid">
-          <figure class="preview-box">
-            <figcaption>Original</figcaption>
-            <div id="source-preview-container"></div>
-          </figure>
-          <figure id="converted-preview-box" class="preview-box hidden">
-            <figcaption>Converted</figcaption>
-            <div id="converted-preview-container"></div>
-          </figure>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <script type="module" src="script.js"></script>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>File Converter</title>
+        <meta name="description" content="Convert files between PNG, JPG, WebP, and PDF in your browser.">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        </script>
+        <script src="script.js"></script>
+    </head>
+    <body>
+        <main class="page-shell">
+            <section class="hero" aria-labelledby="page-title">
+                <p class="eyebrow">Browser file converter</p>
+                <h1 id="page-title">Convert your files</h1>
+                <p class="hero-text">Convert images between PNG, JPG, and WebP. Convert PDFs to images or extract text.</p>
+            </section>
+            <section class="upload-card" aria-label="File converter">
+                <div id="message" class="message hidden" role="alert"></div>
+                <div
+                    id="drop-zone"
+                    class="drop-zone"
+                    tabindex="0"
+                    role="button"
+                    aria-label="Upload file by clicking or dragging"
+                >
+                    <input
+                        id="file-input"
+                        class="file-input"
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.webp,.avif"
+                        aria-label="Choose a file"
+                    >
+                    <div class="upload-icon" aria-hidden="true">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        >
+                            <rect
+                                x="3"
+                                y="5"
+                                width="18"
+                                height="14"
+                                rx="2"
+                            />
+                            <circle cx="8.5" cy="10" r="1.5"/>
+                            <path d="m21 15-4.4-4.4a2 2 0 0 0-2.8 0L5 19"/>
+                        </svg>
+                    </div>
+                    <h2>Drop file here</h2>
+                    <p>Upload a PDF or image file (PNG, JPG, WebP).</p>
+                    <button id="upload-button" class="button" type="button">Choose File</button>
+                </div>
+                <section id="file-panel" class="file-panel hidden" aria-live="polite">
+                    <div class="file-meta">
+                        <span class="label">Selected file</span>
+                        <strong id="file-name">No file selected</strong>
+                        <small id="file-size"></small>
+                    </div>
+                    <div class="file-actions">
+                        <button id="download-original-button" class="button" type="button">Download Original</button>
+                        <button id="remove-button" class="button button-secondary" type="button">Remove</button>
+                    </div>
+                </section>
+                <section id="converter-panel" class="converter-panel hidden" aria-label="Conversion settings">
+                    <div class="converter-grid">
+                        <label class="control-group" for="output-type-select">
+                            <span class="label">Output format</span>
+                            <select id="output-type-select">
+                                <optgroup label="Image to Image">
+                                    <option value="image/png">PNG</option>
+                                    <option value="image/jpeg">JPG</option>
+                                    <option value="image/webp">WebP</option>
+                                </optgroup>
+                                <optgroup label="From PDF">
+                                    <option value="pdf-to-png">PDF to PNG</option>
+                                    <option value="pdf-to-jpg">PDF to JPG</option>
+                                    <option value="pdf-to-webp">PDF to WebP</option>
+                                    <option value="pdf-to-text">PDF to Text (TXT)</option>
+                                </optgroup>
+                            </select>
+                        </label>
+                        <label
+                            class="control-group"
+                            for="pdf-page-select"
+                            id="pdf-page-label"
+                            style="display:none;"
+                        >
+                            <span class="label">Page</span>
+                            <select id="pdf-page-select"></select>
+                        </label>
+                        <label class="control-group" for="quality-input" id="quality-label">
+                            <span class="label">Quality
+                                <strong id="quality-value">92%</strong>
+                            </span>
+                            <input
+                                id="quality-input"
+                                type="range"
+                                min="40"
+                                max="100"
+                                value="92"
+                            >
+                        </label>
+                    </div>
+                    <button id="convert-button" class="button button-wide" type="button">Convert File</button>
+                </section>
+                <section id="upload-status" class="upload-status hidden" aria-live="polite">
+                    <div class="status-header">
+                        <span id="status-title">Ready</span>
+                        <span id="status-percent">0%</span>
+                    </div>
+                    <div class="progress-bar" aria-hidden="true">
+                        <div id="progress-fill"></div>
+                    </div>
+                    <p id="status-text">Choose a file to start.</p>
+                </section>
+                <section id="preview-panel" class="preview-panel hidden" aria-label="File previews">
+                    <div class="preview-header">
+                        <div>
+                            <span class="label">Preview</span>
+                            <strong id="preview-title">Original file</strong>
+                        </div>
+                        <button id="download-converted-button" class="button hidden" type="button">Download Converted</button>
+                    </div>
+                    <div class="preview-grid">
+                        <figure class="preview-box">
+                            <figcaption>Original</figcaption>
+                            <div id="source-preview-container"></div>
+                        </figure>
+                        <figure id="converted-preview-box" class="preview-box hidden">
+                            <figcaption>Converted</figcaption>
+                            <div id="converted-preview-container"></div>
+                        </figure>
+                    </div>
+                </section>
+            </section>
+        </main>
+        <script type="module" src="script.js"></script>
+    </body>
 </html>
