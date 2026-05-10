@@ -253,20 +253,6 @@ input:focus-visible {
   margin-top: 4px;
 }
 
-.preview-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.page-count {
-  min-width: 4.4rem;
-  color: var(--muted);
-  font-weight: 850;
-  text-align: center;
-}
-
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
@@ -277,19 +263,19 @@ input:focus-visible {
   box-shadow: none;
 }
 
-.preview-canvas-wrap {
-  max-height: 580px;
-  overflow: auto;
-  display: grid;
-  justify-items: center;
+.preview-frame-wrap {
+  min-height: 520px;
+  overflow: hidden;
   padding: 14px;
   border-radius: 16px;
   background: rgba(2, 8, 23, 0.38);
 }
 
-#pdf-preview-canvas {
-  max-width: 100%;
-  height: auto;
+#pdf-preview-frame {
+  width: 100%;
+  min-height: 500px;
+  display: block;
+  border: 0;
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
@@ -387,14 +373,18 @@ input:focus-visible {
     align-items: stretch;
   }
 
-  .preview-header,
-  .preview-actions {
+  .preview-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .page-count {
-    min-width: 0;
+  .preview-frame-wrap {
+    min-height: 420px;
+    padding: 10px;
+  }
+
+  #pdf-preview-frame {
+    min-height: 400px;
   }
 
   .button {

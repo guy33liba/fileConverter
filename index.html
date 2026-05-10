@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Upload Component</title>
-  <meta name="description" content="Modern drag-and-drop PDF upload component built with HTML, CSS, and JavaScript.">
+  <title>File Converter</title>
+  <meta name="description" content="Convert image files between PNG, JPG, and WebP directly in your browser.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,29 +13,28 @@
 <body>
   <main class="page-shell">
     <section class="hero" aria-labelledby="page-title">
-      <p class="eyebrow">Secure PDF intake</p>
-      <h1 id="page-title">Upload your PDF</h1>
-      <p class="hero-text">A clean drag-and-drop upload component with validation, file preview, animation, and clear error handling.</p>
+      <p class="eyebrow">Browser file converter</p>
+      <h1 id="page-title">Convert your image</h1>
+      <p class="hero-text">Drag in a PNG, JPG, or WebP file, choose the output format, and download the converted image.</p>
     </section>
 
-    <section class="upload-card" aria-label="PDF upload component">
+    <section class="upload-card" aria-label="Image file converter">
       <div id="message" class="message hidden" role="alert"></div>
 
-      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload PDF by clicking or dragging">
-        <input id="file-input" class="file-input" type="file" accept="application/pdf,.pdf" aria-label="Choose a PDF file">
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload image by clicking or dragging">
+        <input id="file-input" class="file-input" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" aria-label="Choose an image file">
 
         <div class="upload-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
-            <path d="M14 3v5h5"/>
-            <path d="M12 18v-7"/>
-            <path d="m8.5 14.5 3.5-3.5 3.5 3.5"/>
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <circle cx="8.5" cy="10" r="1.5"/>
+            <path d="m21 15-4.4-4.4a2 2 0 0 0-2.8 0L5 19"/>
           </svg>
         </div>
 
-        <h2>Drop PDF file here</h2>
-        <p>Drag and drop your PDF, or choose a file from your device.</p>
-        <button id="upload-button" class="button" type="button">Choose PDF</button>
+        <h2>Drop image file here</h2>
+        <p>Convert PNG, JPG, and WebP files directly on this page.</p>
+        <button id="upload-button" class="button" type="button">Choose Image</button>
       </div>
 
       <section id="file-panel" class="file-panel hidden" aria-live="polite">
@@ -45,41 +44,64 @@
           <small id="file-size"></small>
         </div>
         <div class="file-actions">
-          <button id="download-button" class="button" type="button">Download PDF</button>
           <button id="remove-button" class="button button-secondary" type="button">Remove</button>
         </div>
       </section>
 
+      <section id="converter-panel" class="converter-panel hidden" aria-label="Conversion settings">
+        <div class="converter-grid">
+          <label class="control-group" for="format-select">
+            <span class="label">Convert to</span>
+            <select id="format-select">
+              <option value="image/png">PNG</option>
+              <option value="image/jpeg">JPG</option>
+              <option value="image/webp">WebP</option>
+            </select>
+          </label>
+
+          <label class="control-group" for="quality-input">
+            <span class="label">Quality <strong id="quality-value">92%</strong></span>
+            <input id="quality-input" type="range" min="40" max="100" value="92">
+          </label>
+        </div>
+
+        <button id="convert-button" class="button button-wide" type="button">Convert File</button>
+      </section>
+
       <section id="upload-status" class="upload-status hidden" aria-live="polite">
         <div class="status-header">
-          <span id="status-title">Uploading</span>
+          <span id="status-title">Ready</span>
           <span id="status-percent">0%</span>
         </div>
         <div class="progress-bar" aria-hidden="true">
           <div id="progress-fill"></div>
         </div>
-        <p id="status-text">Checking your PDF...</p>
+        <p id="status-text">Choose an image to start.</p>
       </section>
 
-      <section id="preview-panel" class="preview-panel hidden" aria-label="PDF preview">
+      <section id="preview-panel" class="preview-panel hidden" aria-label="Image previews">
         <div class="preview-header">
           <div>
             <span class="label">Preview</span>
-            <strong id="preview-title">Page 1</strong>
+            <strong id="preview-title">Original image</strong>
           </div>
-          <div class="preview-actions">
-            <button id="prev-page-button" class="button button-secondary" type="button">Previous</button>
-            <span id="page-count" class="page-count">1 / 1</span>
-            <button id="next-page-button" class="button button-secondary" type="button">Next</button>
-          </div>
+          <button id="download-button" class="button hidden" type="button">Download Converted File</button>
         </div>
-        <div class="preview-canvas-wrap">
-          <canvas id="pdf-preview-canvas"></canvas>
+
+        <div class="preview-grid">
+          <figure class="preview-box">
+            <figcaption>Original</figcaption>
+            <img id="source-preview" alt="Original uploaded file preview">
+          </figure>
+          <figure id="converted-preview-box" class="preview-box hidden">
+            <figcaption>Converted</figcaption>
+            <img id="converted-preview" alt="Converted file preview">
+          </figure>
         </div>
       </section>
     </section>
   </main>
 
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
