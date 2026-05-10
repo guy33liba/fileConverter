@@ -11,13 +11,14 @@ const elements = {
   filePanel: document.getElementById('file-panel'),
   fileName: document.getElementById('file-name'),
   fileSize: document.getElementById('file-size'),
+  downloadOriginalButton: document.getElementById('download-original-button'),
   removeButton: document.getElementById('remove-button'),
   converterPanel: document.getElementById('converter-panel'),
   formatSelect: document.getElementById('format-select'),
   qualityInput: document.getElementById('quality-input'),
   qualityValue: document.getElementById('quality-value'),
   convertButton: document.getElementById('convert-button'),
-  downloadButton: document.getElementById('download-button'),
+  downloadConvertedButton: document.getElementById('download-converted-button'),
   uploadStatus: document.getElementById('upload-status'),
   statusTitle: document.getElementById('status-title'),
   statusPercent: document.getElementById('status-percent'),
@@ -44,9 +45,10 @@ function setupEvents() {
   elements.dropZone.addEventListener('click', openFilePicker);
   elements.dropZone.addEventListener('keydown', handleKeyboardUpload);
   elements.fileInput.addEventListener('change', handleInputChange);
+  elements.downloadOriginalButton.addEventListener('click', downloadOriginalFile);
   elements.removeButton.addEventListener('click', resetConverter);
   elements.convertButton.addEventListener('click', convertSelectedFile);
-  elements.downloadButton.addEventListener('click', downloadConvertedFile);
+  elements.downloadConvertedButton.addEventListener('click', downloadConvertedFile);
   elements.qualityInput.addEventListener('input', updateQualityLabel);
 
   elements.dropZone.addEventListener('dragenter', handleDragEnter);
@@ -199,7 +201,7 @@ async function convertSelectedFile(event) {
 
     elements.convertedPreview.src = convertedFileUrl;
     elements.convertedPreviewBox.classList.remove('hidden');
-    elements.downloadButton.classList.remove('hidden');
+    elements.downloadConvertedButton.classList.remove('hidden');
     setStatus(100, 'Converted', `${convertedFileName} is ready to download.`);
   } catch (error) {
     showError('Could not convert this image. Try another PNG, JPG, or WebP file.');
@@ -228,6 +230,22 @@ function loadImage(src) {
     image.onerror = reject;
     image.src = src;
   });
+}
+
+function downloadOriginalFile(event) {
+  event?.stopPropagation();
+
+  if (!sourceFileUrl || !selectedFile) {
+    showError('Choose a file before downloading.');
+    return;
+  }
+
+  const link = document.createElement('a');
+  link.href = sourceFileUrl;
+  link.download = selectedFile.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function downloadConvertedFile(event) {
@@ -283,7 +301,7 @@ function resetConvertedFile() {
   convertedFileName = '';
   elements.convertedPreview.removeAttribute('src');
   elements.convertedPreviewBox.classList.add('hidden');
-  elements.downloadButton.classList.add('hidden');
+  elements.downloadConvertedButton.classList.add('hidden');
 }
 
 function setStatus(percent, title, text) {
