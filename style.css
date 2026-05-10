@@ -200,7 +200,8 @@ input:focus-visible {
 }
 
 .file-panel,
-.upload-status {
+.upload-status,
+.preview-panel {
   margin-top: 18px;
   padding: 18px;
   border: 1px solid rgba(186, 230, 253, 0.22);
@@ -237,6 +238,61 @@ input:focus-visible {
   margin-top: 4px;
   color: var(--soft);
   font-weight: 700;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.preview-header strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.page-count {
+  min-width: 4.4rem;
+  color: var(--muted);
+  font-weight: 850;
+  text-align: center;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+}
+
+.button:disabled:hover {
+  box-shadow: none;
+}
+
+.preview-canvas-wrap {
+  max-height: 580px;
+  overflow: auto;
+  display: grid;
+  justify-items: center;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(2, 8, 23, 0.38);
+}
+
+#pdf-preview-canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
 }
 
 .message {
@@ -329,6 +385,16 @@ input:focus-visible {
   .file-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .preview-header,
+  .preview-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-count {
+    min-width: 0;
   }
 
   .button {
