@@ -1,3 +1,8 @@
+import * as pdfjsLib from 'pdfjs-dist';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+
+const imageExtensions = ['image/png', 'image/jpeg', 'image/webp'];
 const mimeExtensions = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -14,9 +19,12 @@ const elements = {
   downloadOriginalButton: document.getElementById('download-original-button'),
   removeButton: document.getElementById('remove-button'),
   converterPanel: document.getElementById('converter-panel'),
-  formatSelect: document.getElementById('format-select'),
+  outputTypeSelect: document.getElementById('output-type-select'),
+  pdfPageSelect: document.getElementById('pdf-page-select'),
+  pdfPageLabel: document.getElementById('pdf-page-label'),
   qualityInput: document.getElementById('quality-input'),
   qualityValue: document.getElementById('quality-value'),
+  qualityLabel: document.getElementById('quality-label'),
   convertButton: document.getElementById('convert-button'),
   downloadConvertedButton: document.getElementById('download-converted-button'),
   uploadStatus: document.getElementById('upload-status'),
@@ -26,9 +34,9 @@ const elements = {
   progressFill: document.getElementById('progress-fill'),
   previewPanel: document.getElementById('preview-panel'),
   previewTitle: document.getElementById('preview-title'),
-  sourcePreview: document.getElementById('source-preview'),
+  sourcePreviewContainer: document.getElementById('source-preview-container'),
   convertedPreviewBox: document.getElementById('converted-preview-box'),
-  convertedPreview: document.getElementById('converted-preview'),
+  convertedPreviewContainer: document.getElementById('converted-preview-container'),
   message: document.getElementById('message')
 };
 
@@ -37,6 +45,9 @@ let sourceFileUrl = '';
 let convertedFileUrl = '';
 let convertedFileName = '';
 let animationTimer = null;
+let isPdf = false;
+let pdfDoc = null;
+let selectedPdfPages = [];
 
 setupEvents();
 
@@ -50,6 +61,7 @@ function setupEvents() {
   elements.convertButton.addEventListener('click', convertSelectedFile);
   elements.downloadConvertedButton.addEventListener('click', downloadConvertedFile);
   elements.qualityInput.addEventListener('input', updateQualityLabel);
+  elements.outputTypeSelect.addEventListener('change', handleOutputTypeChange);
 
   elements.dropZone.addEventListener('dragenter', handleDragEnter);
   elements.dropZone.addEventListener('dragover', handleDragOver);
@@ -97,7 +109,6 @@ function handleDragOver(event) {
 
 function handleDragLeave(event) {
   event.preventDefault();
-
   if (!elements.dropZone.contains(event.relatedTarget)) {
     elements.dropZone.classList.remove('drag-over');
   }
@@ -110,44 +121,189 @@ function handleDrop(event) {
 
   const file = event.dataTransfer?.files?.[0];
   if (!file) {
-    showError('No file was dropped. Please drop an image file.');
+    showError('No file was dropped. Please drop a file.');
     return;
   }
-
   handleSelectedFile(file);
 }
 
-function handleSelectedFile(file) {
+async function handleSelectedFile(file) {
   clearError();
   stopAnimation();
   resetSourceFile();
   resetConvertedFile();
+  pdfDoc = null;
+  selectedPdfPages = [];
 
-  if (!isSupportedImage(file)) {
+  isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  
+  if (!isPdf && !isSupportedImage(file)) {
     selectedFile = null;
     elements.fileInput.value = '';
-    elements.filePanel.classList.add('hidden');
-    elements.converterPanel.classList.add('hidden');
-    elements.previewPanel.classList.add('hidden');
-    showError('This file can be uploaded, but only PNG, JPG, and WebP images can be converted right now.');
-    setStatus(0, 'Not convertible', 'Choose a PNG, JPG, or WebP image to convert.');
-    elements.uploadStatus.classList.remove('hidden');
+    showError('Unsupported file type. Please upload a PDF or image (PNG, JPG, WebP).');
     return;
   }
 
   selectedFile = file;
   sourceFileUrl = URL.createObjectURL(file);
   elements.fileName.textContent = file.name;
-  elements.fileSize.textContent = `${formatFileSize(file.size)} - ${getFormatName(file.type)}`;
-  elements.sourcePreview.src = sourceFileUrl;
-  elements.previewTitle.textContent = file.name;
+  elements.fileSize.textContent = formatFileSize(file.size);
+
+  updateOutputOptions();
+  
+  if (isPdf) {
+    setStatus(10, 'Loading PDF', 'Reading PDF file...');
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      populatePdfPages(pdfDoc.numPages);
+      setStatus(50, 'Ready', `${pdfDoc.numPages} page${pdfDoc.numPages > 1 ? 's' : ''} loaded. Select output format.`);
+      await showPdfPreview();
+    } catch (err) {
+      showError('Failed to read PDF file.');
+      setStatus(0, 'Error', 'Could not load PDF.');
+      return;
+    }
+  } else {
+    animateReadyState();
+    await showImagePreview(file);
+  }
+
   elements.filePanel.classList.remove('hidden');
   elements.converterPanel.classList.remove('hidden');
   elements.uploadStatus.classList.remove('hidden');
   elements.previewPanel.classList.remove('hidden');
   elements.dropZone.classList.add('has-file');
-  animateReadyState();
 }
+
+function updateOutputOptions() {
+  const select = elements.outputTypeSelect;
+  select.innerHTML = '';
+  
+  if (isPdf) {
+    const optGroupPdf = document.createElement('optgroup');
+    optGroupPdf.label = 'From PDF';
+    [
+      { value: 'pdf-to-png', label: 'PDF to PNG' },
+      { value: 'pdf-to-jpg', label: 'PDF to JPG' },
+      { value: 'pdf-to-webp', label: 'PDF to WebP' },
+      { value: 'pdf-to-text', label: 'PDF to Text (TXT)' }
+    ].forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.label;
+      optGroupPdf.appendChild(option);
+    });
+    select.appendChild(optGroupPdf);
+    elements.qualityLabel.style.display = '';
+    elements.pdfPageLabel.style.display = '';
+  } else {
+    const optGroupImg = document.createElement('optgroup');
+    optGroupImg.label = 'Image formats';
+    [
+      { value: 'image/png', label: 'PNG' },
+      { value: 'image/jpeg', label: 'JPG' },
+      { value: 'image/webp', label: 'WebP' }
+    ].forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.label;
+      optGroupImg.appendChild(option);
+    });
+    select.appendChild(optGroupImg);
+    elements.qualityLabel.style.display = '';
+    elements.pdfPageLabel.style.display = 'none';
+  }
+}
+
+function populatePdfPages(numPages) {
+  const select = elements.pdfPageSelect;
+  select.innerHTML = '';
+  selectedPdfPages = [];
+  
+  for (let i = 1; i <= numPages; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `Page ${i} of ${numPages}`;
+    select.appendChild(option);
+  }
+  select.selectedIndex = 0;
+}
+
+function handleOutputTypeChange() {
+  resetConvertedFile();
+  const outputType = elements.outputTypeSelect.value;
+  if (outputType === 'pdf-to-text') {
+    elements.qualityLabel.style.display = 'none';
+  } else {
+    elements.qualityLabel.style.display = '';
+  }
+}
+
+async function showImagePreview(file) {
+  return new Promise((resolve) => {
+    elements.sourcePreviewContainer.innerHTML = '';
+    const img = document.createElement('img');
+    img.alt = 'Original image preview';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '300px';
+    img.style.borderRadius = '8px';
+    img.src = sourceFileUrl;
+    img.onload = () => {
+      elements.sourcePreviewContainer.appendChild(img);
+      elements.previewTitle.textContent = file.name;
+      resolve();
+    };
+    img.onerror = () => {
+      elements.sourcePreviewContainer.innerHTML = '<p>Preview not available</p>';
+      resolve();
+    };
+  });
+}
+
+async function showPdfPreview() {
+  elements.sourcePreviewContainer.innerHTML = '';
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '8px';
+  
+  const pageNum = parseInt(elements.pdfPageSelect.value) || 1;
+  
+  try {
+    const page = await pdfDoc.getPage(pageNum);
+    const scale = 0.8;
+    const viewport = page.getViewport({ scale });
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.style.maxWidth = '100%';
+    canvas.style.borderRadius = '8px';
+    
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    container.appendChild(canvas);
+    
+    const pageInfo = document.createElement('p');
+    pageInfo.textContent = `PDF - Page ${pageNum} of ${pdfDoc.numPages}`;
+    pageInfo.style.cssText = 'font-size: 12px; color: #666; margin: 0;';
+    container.appendChild(pageInfo);
+    
+    elements.sourcePreviewContainer.appendChild(container);
+    elements.previewTitle.textContent = selectedFile.name;
+  } catch (err) {
+    container.innerHTML = '<p>Preview not available</p>';
+    elements.sourcePreviewContainer.appendChild(container);
+  }
+}
+
+elements.pdfPageSelect?.addEventListener('change', async () => {
+  if (isPdf && pdfDoc) {
+    await showPdfPreview();
+    resetConvertedFile();
+  }
+});
 
 function animateReadyState() {
   let progress = 0;
@@ -169,20 +325,32 @@ async function convertSelectedFile(event) {
   event?.stopPropagation();
 
   if (!selectedFile) {
-    showError('Choose an image before converting.');
+    showError('Choose a file before converting.');
     return;
   }
 
   clearError();
   resetConvertedFile();
   setConversionBusy(true);
+  
+  const outputType = elements.outputTypeSelect.value;
+
+  if (isPdf) {
+    await convertPdf(outputType);
+  } else {
+    await convertImage(outputType);
+  }
+
+  setConversionBusy(false);
+}
+
+async function convertImage(outputType) {
   setStatus(35, 'Converting', 'Drawing image to canvas...');
 
   try {
     const image = await loadImage(sourceFileUrl);
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    const outputType = elements.formatSelect.value;
 
     canvas.width = image.naturalWidth;
     canvas.height = image.naturalHeight;
@@ -199,16 +367,124 @@ async function convertSelectedFile(event) {
     convertedFileUrl = URL.createObjectURL(blob);
     convertedFileName = buildConvertedFileName(selectedFile.name, outputType);
 
-    elements.convertedPreview.src = convertedFileUrl;
-    elements.convertedPreviewBox.classList.remove('hidden');
-    elements.downloadConvertedButton.classList.remove('hidden');
+    showConvertedImagePreview(blob);
     setStatus(100, 'Converted', `${convertedFileName} is ready to download.`);
   } catch (error) {
-    showError('Could not convert this image. Try another PNG, JPG, or WebP file.');
+    showError('Could not convert this image. Try another file.');
     setStatus(0, 'Conversion failed', 'The selected image could not be converted.');
-  } finally {
-    setConversionBusy(false);
   }
+}
+
+async function convertPdf(outputType) {
+  if (outputType === 'pdf-to-text') {
+    await extractPdfText();
+  } else {
+    await convertPdfToImages(outputType);
+  }
+}
+
+async function extractPdfText() {
+  setStatus(30, 'Extracting text', 'Reading PDF content...');
+  
+  try {
+    let fullText = '';
+    const totalPages = pdfDoc.numPages;
+    
+    for (let i = 1; i <= totalPages; i++) {
+      setStatus(30 + Math.floor((i / totalPages) * 50), 'Extracting', `Processing page ${i} of ${totalPages}...`);
+      const page = await pdfDoc.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += `--- Page ${i} ---\n${pageText}\n\n`;
+    }
+    
+    const blob = new Blob([fullText], { type: 'text/plain' });
+    convertedFileUrl = URL.createObjectURL(blob);
+    const baseName = selectedFile.name.replace(/\.pdf$/i, '') || 'converted';
+    convertedFileName = `${baseName}.txt`;
+    
+    showTextPreview(fullText);
+    setStatus(100, 'Extracted', 'Text extracted successfully.');
+  } catch (err) {
+    showError('Could not extract text from PDF.');
+    setStatus(0, 'Extraction failed', 'Could not read PDF text.');
+  }
+}
+
+async function convertPdfToImages(outputType) {
+  setStatus(20, 'Preparing', 'Rendering PDF pages...');
+  
+  try {
+    const pageNum = parseInt(elements.pdfPageSelect.value) || 1;
+    const page = await pdfDoc.getPage(pageNum);
+    
+    const scale = 2.0;
+    const viewport = page.getViewport({ scale });
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    
+    if (outputType === 'pdf-to-jpg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    setStatus(50, 'Rendering', 'Drawing page to canvas...');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    
+    setStatus(80, 'Converting', `Creating ${outputType.replace('pdf-to-', '').toUpperCase()} file...`);
+    
+    const mimeType = outputType.replace('pdf-to-', 'image/');
+    const quality = Number(elements.qualityInput.value) / 100;
+    const blob = await canvasToBlob(canvas, mimeType, quality);
+    
+    convertedFileUrl = URL.createObjectURL(blob);
+    const baseName = selectedFile.name.replace(/\.pdf$/i, '') || 'converted';
+    const ext = mimeExtensions[mimeType] || 'png';
+    convertedFileName = `${baseName}-page${pageNum}.${ext}`;
+    
+    showConvertedImagePreview(blob);
+    setStatus(100, 'Converted', `${convertedFileName} is ready to download.`);
+  } catch (err) {
+    showError('Could not convert PDF page.');
+    setStatus(0, 'Conversion failed', 'PDF page could not be rendered.');
+  }
+}
+
+function showConvertedImagePreview(blob) {
+  elements.convertedPreviewContainer.innerHTML = '';
+  const img = document.createElement('img');
+  img.alt = 'Converted file preview';
+  img.style.maxWidth = '100%';
+  img.style.maxHeight = '300px';
+  img.style.borderRadius = '8px';
+  img.src = convertedFileUrl;
+  img.onload = () => {
+    elements.convertedPreviewContainer.appendChild(img);
+  };
+  img.onerror = () => {
+    elements.convertedPreviewContainer.innerHTML = '<p>Preview not available</p>';
+  };
+  elements.convertedPreviewBox.classList.remove('hidden');
+  elements.downloadConvertedButton.classList.remove('hidden');
+}
+
+function showTextPreview(text) {
+  elements.convertedPreviewContainer.innerHTML = '';
+  const pre = document.createElement('pre');
+  pre.textContent = text.length > 2000 ? text.substring(0, 2000) + '\n\n... (truncated)' : text;
+  pre.style.cssText = 'max-height: 300px; overflow-y: auto; font-size: 12px; background: #f5f5f5; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; max-width: 100%;';
+  
+  const label = document.createElement('p');
+  label.style.cssText = 'font-size: 12px; color: #666; margin: 8px 0 0;';
+  label.textContent = `${text.length} characters extracted`;
+  
+  elements.convertedPreviewContainer.appendChild(pre);
+  elements.convertedPreviewContainer.appendChild(label);
+  elements.convertedPreviewBox.classList.remove('hidden');
+  elements.downloadConvertedButton.classList.remove('hidden');
 }
 
 function canvasToBlob(canvas, type, quality) {
@@ -267,6 +543,8 @@ function downloadConvertedFile(event) {
 function resetConverter(event) {
   event?.stopPropagation();
   selectedFile = null;
+  isPdf = false;
+  pdfDoc = null;
   elements.fileInput.value = '';
   elements.fileName.textContent = 'No file selected';
   elements.fileSize.textContent = '';
@@ -275,7 +553,8 @@ function resetConverter(event) {
   elements.uploadStatus.classList.add('hidden');
   elements.previewPanel.classList.add('hidden');
   elements.dropZone.classList.remove('has-file');
-  setStatus(0, 'Ready', 'Choose an image to start.');
+  elements.pdfPageLabel.style.display = 'none';
+  setStatus(0, 'Ready', 'Choose a file to start.');
   clearError();
   stopAnimation();
   resetSourceFile();
@@ -287,9 +566,8 @@ function resetSourceFile() {
     URL.revokeObjectURL(sourceFileUrl);
     sourceFileUrl = '';
   }
-
-  elements.sourcePreview.removeAttribute('src');
-  elements.previewTitle.textContent = 'Original image';
+  elements.sourcePreviewContainer.innerHTML = '';
+  elements.previewTitle.textContent = 'Original file';
 }
 
 function resetConvertedFile() {
@@ -297,9 +575,8 @@ function resetConvertedFile() {
     URL.revokeObjectURL(convertedFileUrl);
     convertedFileUrl = '';
   }
-
   convertedFileName = '';
-  elements.convertedPreview.removeAttribute('src');
+  elements.convertedPreviewContainer.innerHTML = '';
   elements.convertedPreviewBox.classList.add('hidden');
   elements.downloadConvertedButton.classList.add('hidden');
 }
@@ -313,7 +590,7 @@ function setStatus(percent, title, text) {
 
 function setConversionBusy(isBusy) {
   elements.convertButton.disabled = isBusy;
-  elements.formatSelect.disabled = isBusy;
+  elements.outputTypeSelect.disabled = isBusy;
   elements.qualityInput.disabled = isBusy;
 }
 
@@ -340,16 +617,18 @@ function stopAnimation() {
 }
 
 function isSupportedImage(file) {
-  return Boolean(mimeExtensions[file.type]) || /\.(png|jpe?g|webp)$/i.test(file.name);
+  return imageExtensions.includes(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name);
 }
 
 function getFormatName(type) {
-  return mimeExtensions[type]?.toUpperCase().replace('JPG', 'JPG') || 'IMAGE';
+  const ext = type.split('/')[1]?.toUpperCase() || 'IMAGE';
+  return ext === 'JPEG' ? 'JPG' : ext;
 }
 
 function buildConvertedFileName(fileName, type) {
+  const ext = mimeExtensions[type] || type.split('/')[1];
   const baseName = fileName.replace(/\.[^.]+$/, '') || 'converted-image';
-  return `${baseName}.${mimeExtensions[type]}`;
+  return `${baseName}.${ext}`;
 }
 
 function formatFileSize(bytes) {
