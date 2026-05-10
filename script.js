@@ -129,8 +129,8 @@ function handleSelectedFile(file) {
     elements.filePanel.classList.add('hidden');
     elements.converterPanel.classList.add('hidden');
     elements.previewPanel.classList.add('hidden');
-    showError('Only PNG, JPG, and WebP images are supported.');
-    setStatus(0, 'File rejected', 'Choose a PNG, JPG, or WebP image.');
+    showError('This file can be uploaded, but only PNG, JPG, and WebP images can be converted right now.');
+    setStatus(0, 'Not convertible', 'Choose a PNG, JPG, or WebP image to convert.');
     elements.uploadStatus.classList.remove('hidden');
     return;
   }

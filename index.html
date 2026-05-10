@@ -15,14 +15,14 @@
     <section class="hero" aria-labelledby="page-title">
       <p class="eyebrow">Browser file converter</p>
       <h1 id="page-title">Convert your image</h1>
-      <p class="hero-text">Drag in a PNG, JPG, or WebP file, choose the output format, and download the converted image.</p>
+      <p class="hero-text">Drag in any file. Image files can be converted between PNG, JPG, and WebP.</p>
     </section>
 
     <section class="upload-card" aria-label="Image file converter">
       <div id="message" class="message hidden" role="alert"></div>
 
-      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload image by clicking or dragging">
-        <input id="file-input" class="file-input" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" aria-label="Choose an image file">
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload file by clicking or dragging">
+        <input id="file-input" class="file-input" type="file" aria-label="Choose a file">
 
         <div class="upload-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -32,9 +32,9 @@
           </svg>
         </div>
 
-        <h2>Drop image file here</h2>
-        <p>Convert PNG, JPG, and WebP files directly on this page.</p>
-        <button id="upload-button" class="button" type="button">Choose Image</button>
+        <h2>Drop file here</h2>
+        <p>All files can be selected. PNG, JPG, and WebP files can be converted.</p>
+        <button id="upload-button" class="button" type="button">Choose File</button>
       </div>
 
       <section id="file-panel" class="file-panel hidden" aria-live="polite">
