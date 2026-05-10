@@ -16,6 +16,7 @@ const mimeExtensions = {
   'text/plain': 'txt'
 };
 const pdfTextOutput = 'pdf-to-text';
+const maxBatchFiles = 100;
 
 const elements = {
   dropZone: document.getElementById('drop-zone'),
@@ -150,8 +151,10 @@ async function handleSelectedFiles(files) {
   resetConverter();
   clearError();
 
-  const validFiles = files.filter(isSupportedFile);
-  const invalidCount = files.length - validFiles.length;
+  const limitedFiles = files.slice(0, maxBatchFiles);
+  const overLimitCount = Math.max(files.length - maxBatchFiles, 0);
+  const validFiles = limitedFiles.filter(isSupportedFile);
+  const invalidCount = limitedFiles.length - validFiles.length;
 
   if (!validFiles.length) {
     showError('Unsupported file type. Please upload PDFs or images (PNG, JPG, WebP, AVIF).');
@@ -172,8 +175,15 @@ async function handleSelectedFiles(files) {
   elements.previewPanel.classList.remove('hidden');
   elements.dropZone.classList.add('has-file');
 
-  if (invalidCount > 0) {
-    showError(`${invalidCount} unsupported file${invalidCount > 1 ? 's were' : ' was'} skipped.`);
+  if (invalidCount > 0 || overLimitCount > 0) {
+    const messages = [];
+    if (invalidCount > 0) {
+      messages.push(`${invalidCount} unsupported file${invalidCount > 1 ? 's were' : ' was'} skipped`);
+    }
+    if (overLimitCount > 0) {
+      messages.push(`${overLimitCount} file${overLimitCount > 1 ? 's were' : ' was'} over the 100-file batch limit`);
+    }
+    showError(`${messages.join('. ')}.`);
   }
 
   await loadPdfDocuments();
@@ -618,6 +628,7 @@ function getPdfPagesToConvert(item) {
 
 function addConvertedFile(item, blob, name, previewText = '') {
   item.convertedFiles.push({
+    blob,
     url: URL.createObjectURL(blob),
     name,
     type: blob.type || 'application/octet-stream',
@@ -716,7 +727,7 @@ function loadImage(src) {
   });
 }
 
-function downloadOriginalFiles(event) {
+async function downloadOriginalFiles(event) {
   event?.stopPropagation();
 
   if (!batchItems.length) {
@@ -724,12 +735,14 @@ function downloadOriginalFiles(event) {
     return;
   }
 
-  batchItems.forEach((item, index) => {
-    window.setTimeout(() => triggerDownload(item.sourceUrl, item.file.name), index * 120);
-  });
+  clearError();
+  await downloadFileCollection(
+    batchItems.map((item) => ({ blob: item.file, name: item.file.name })),
+    'original-files.zip'
+  );
 }
 
-function downloadConvertedFiles(event) {
+async function downloadConvertedFiles(event) {
   event?.stopPropagation();
 
   const outputs = getAllConvertedFiles();
@@ -738,9 +751,151 @@ function downloadConvertedFiles(event) {
     return;
   }
 
-  outputs.forEach((output, index) => {
-    window.setTimeout(() => triggerDownload(output.url, output.name), index * 120);
+  clearError();
+  await downloadFileCollection(outputs, 'converted-files.zip');
+}
+
+async function downloadFileCollection(files, zipName) {
+  if (files.length === 1) {
+    if (files[0].url) {
+      triggerDownload(files[0].url, files[0].name);
+      return;
+    }
+
+    const singleUrl = URL.createObjectURL(files[0].blob);
+    triggerDownload(singleUrl, files[0].name);
+    window.setTimeout(() => URL.revokeObjectURL(singleUrl), 1000);
+    return;
+  }
+
+  setStatus(100, 'Preparing download', `Packing ${files.length} files into a ZIP...`);
+  const zipBlob = await createZipBlob(files);
+  const zipUrl = URL.createObjectURL(zipBlob);
+  triggerDownload(zipUrl, zipName);
+  window.setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
+  setStatus(100, 'Download ready', `${zipName} contains ${files.length} files.`);
+}
+
+async function createZipBlob(files) {
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  const usedNames = new Map();
+  let offset = 0;
+
+  for (const file of files) {
+    const safeName = getUniqueZipName(file.name, usedNames);
+    const nameBytes = encoder.encode(safeName);
+    const data = new Uint8Array(await file.blob.arrayBuffer());
+    const crc = crc32(data);
+    const { date, time } = getZipDateTime();
+
+    const localHeader = createZipHeader(30, 0x04034b50);
+    localHeader.setUint16(4, 20, true);
+    localHeader.setUint16(6, 0, true);
+    localHeader.setUint16(8, 0, true);
+    localHeader.setUint16(10, time, true);
+    localHeader.setUint16(12, date, true);
+    localHeader.setUint32(14, crc, true);
+    localHeader.setUint32(18, data.byteLength, true);
+    localHeader.setUint32(22, data.byteLength, true);
+    localHeader.setUint16(26, nameBytes.byteLength, true);
+    localHeader.setUint16(28, 0, true);
+
+    localParts.push(localHeader.buffer, nameBytes, data);
+
+    const centralHeader = createZipHeader(46, 0x02014b50);
+    centralHeader.setUint16(4, 20, true);
+    centralHeader.setUint16(6, 20, true);
+    centralHeader.setUint16(8, 0, true);
+    centralHeader.setUint16(10, 0, true);
+    centralHeader.setUint16(12, time, true);
+    centralHeader.setUint16(14, date, true);
+    centralHeader.setUint32(16, crc, true);
+    centralHeader.setUint32(20, data.byteLength, true);
+    centralHeader.setUint32(24, data.byteLength, true);
+    centralHeader.setUint16(28, nameBytes.byteLength, true);
+    centralHeader.setUint16(30, 0, true);
+    centralHeader.setUint16(32, 0, true);
+    centralHeader.setUint16(34, 0, true);
+    centralHeader.setUint16(36, 0, true);
+    centralHeader.setUint32(38, 0, true);
+    centralHeader.setUint32(42, offset, true);
+    centralParts.push(centralHeader.buffer, nameBytes);
+
+    offset += localHeader.byteLength + nameBytes.byteLength + data.byteLength;
+  }
+
+  const centralDirectorySize = centralParts.reduce((sum, part) => sum + part.byteLength, 0);
+  const endHeader = createZipHeader(22, 0x06054b50);
+  endHeader.setUint16(4, 0, true);
+  endHeader.setUint16(6, 0, true);
+  endHeader.setUint16(8, files.length, true);
+  endHeader.setUint16(10, files.length, true);
+  endHeader.setUint32(12, centralDirectorySize, true);
+  endHeader.setUint32(16, offset, true);
+  endHeader.setUint16(20, 0, true);
+
+  return new Blob([...localParts, ...centralParts, endHeader.buffer], { type: 'application/zip' });
+}
+
+function createZipHeader(size, signature) {
+  const buffer = new ArrayBuffer(size);
+  const view = new DataView(buffer);
+  view.setUint32(0, signature, true);
+  return view;
+}
+
+function getUniqueZipName(name, usedNames) {
+  const safeName = name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') || 'file';
+  const count = usedNames.get(safeName) || 0;
+  usedNames.set(safeName, count + 1);
+
+  if (count === 0) {
+    return safeName;
+  }
+
+  const dotIndex = safeName.lastIndexOf('.');
+  if (dotIndex <= 0) {
+    return `${safeName}-${count + 1}`;
+  }
+
+  return `${safeName.slice(0, dotIndex)}-${count + 1}${safeName.slice(dotIndex)}`;
+}
+
+function getZipDateTime() {
+  const now = new Date();
+  const year = Math.max(now.getFullYear(), 1980);
+  const date = ((year - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const time = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+  return { date, time };
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  const table = getCrc32Table();
+
+  for (const byte of bytes) {
+    crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff];
+  }
+
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function getCrc32Table() {
+  if (getCrc32Table.table) {
+    return getCrc32Table.table;
+  }
+
+  getCrc32Table.table = Array.from({ length: 256 }, (_, index) => {
+    let value = index;
+    for (let bit = 0; bit < 8; bit++) {
+      value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+    }
+    return value >>> 0;
   });
+
+  return getCrc32Table.table;
 }
 
 function triggerDownload(url, name) {
