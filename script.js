@@ -80,6 +80,9 @@ function setupEvents() {
 
 function openFilePicker(event) {
   event?.stopPropagation();
+  if (isConverting) {
+    return;
+  }
   elements.fileInput.value = '';
   elements.fileInput.click();
 }
@@ -92,6 +95,10 @@ function handleKeyboardUpload(event) {
 }
 
 function handleInputChange(event) {
+  if (isConverting) {
+    return;
+  }
+
   const files = Array.from(event.target.files || []);
   if (files.length) {
     handleSelectedFiles(files);
@@ -124,6 +131,11 @@ function handleDrop(event) {
   event.preventDefault();
   event.stopPropagation();
   elements.dropZone.classList.remove('drag-over');
+
+  if (isConverting) {
+    showError('Wait for the current conversion to finish before adding more files.');
+    return;
+  }
 
   const files = Array.from(event.dataTransfer?.files || []);
   if (!files.length) {
@@ -335,7 +347,7 @@ function renderFileList() {
     name.textContent = item.file.name;
 
     const meta = document.createElement('span');
-    meta.textContent = `${item.isPdf ? 'PDF' : getFormatName(item.file.type)} • ${formatFileSize(item.file.size)}`;
+    meta.textContent = `${item.isPdf ? 'PDF' : getFormatName(item.file.type)} - ${formatFileSize(item.file.size)}`;
 
     const status = document.createElement('span');
     status.className = `file-status ${item.statusKind}`;
