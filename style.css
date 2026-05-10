@@ -35,13 +35,15 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
 button:focus-visible,
 [role="button"]:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid rgba(56, 232, 255, 0.45);
   outline-offset: 3px;
 }
@@ -200,6 +202,7 @@ input:focus-visible {
 }
 
 .file-panel,
+.converter-panel,
 .upload-status,
 .preview-panel {
   margin-top: 18px;
@@ -240,6 +243,49 @@ input:focus-visible {
   font-weight: 700;
 }
 
+.converter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.control-group {
+  display: grid;
+  gap: 10px;
+}
+
+.control-group .label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-group select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(186, 230, 253, 0.28);
+  border-radius: 14px;
+  color: var(--text);
+  background: rgba(2, 8, 23, 0.42);
+  cursor: pointer;
+}
+
+.control-group option {
+  color: #0f172a;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--cyan);
+}
+
+.button-wide {
+  width: 100%;
+}
+
 .preview-header {
   display: flex;
   align-items: center;
@@ -263,21 +309,40 @@ input:focus-visible {
   box-shadow: none;
 }
 
-.preview-frame-wrap {
-  min-height: 520px;
-  overflow: hidden;
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.preview-box {
+  margin: 0;
   padding: 14px;
   border-radius: 16px;
   background: rgba(2, 8, 23, 0.38);
 }
 
-#pdf-preview-frame {
+.preview-box figcaption {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.preview-box img {
   width: 100%;
-  min-height: 500px;
+  max-height: 480px;
   display: block;
-  border: 0;
+  object-fit: contain;
   border-radius: 8px;
-  background: #ffffff;
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.14) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.14) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.14) 75%),
+    rgba(255, 255, 255, 0.08);
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
 }
 
@@ -373,18 +438,14 @@ input:focus-visible {
     align-items: stretch;
   }
 
+  .converter-grid,
+  .preview-grid {
+    grid-template-columns: 1fr;
+  }
+
   .preview-header {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .preview-frame-wrap {
-    min-height: 420px;
-    padding: 10px;
-  }
-
-  #pdf-preview-frame {
-    min-height: 400px;
   }
 
   .button {
