@@ -1,3 +1,8 @@
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
 const elements = {
   dropZone: document.getElementById('drop-zone'),
   fileInput: document.getElementById('file-input'),
@@ -12,11 +17,21 @@ const elements = {
   statusPercent: document.getElementById('status-percent'),
   statusText: document.getElementById('status-text'),
   progressFill: document.getElementById('progress-fill'),
+  previewPanel: document.getElementById('preview-panel'),
+  previewTitle: document.getElementById('preview-title'),
+  pageCount: document.getElementById('page-count'),
+  prevPageButton: document.getElementById('prev-page-button'),
+  nextPageButton: document.getElementById('next-page-button'),
+  previewCanvas: document.getElementById('pdf-preview-canvas'),
   message: document.getElementById('message')
 };
 
 let selectedFile = null;
 let animationTimer = null;
+let previewPdf = null;
+let currentPage = 1;
+let previewToken = 0;
+let activeRenderTask = null;
 
 setupEvents();
 
@@ -27,6 +42,8 @@ function setupEvents() {
   elements.fileInput.addEventListener('change', handleInputChange);
   elements.downloadButton.addEventListener('click', downloadSelectedFile);
   elements.removeButton.addEventListener('click', resetUpload);
+  elements.prevPageButton.addEventListener('click', () => changePreviewPage(-1));
+  elements.nextPageButton.addEventListener('click', () => changePreviewPage(1));
 
   elements.dropZone.addEventListener('dragover', handleDragOver);
   elements.dropZone.addEventListener('dragleave', handleDragLeave);
@@ -79,6 +96,7 @@ function handleDrop(event) {
 function handleSelectedFile(file) {
   clearError();
   stopAnimation();
+  resetPreview();
 
   if (!isPdf(file)) {
     selectedFile = null;
@@ -96,6 +114,7 @@ function handleSelectedFile(file) {
   elements.filePanel.classList.remove('hidden');
   elements.uploadStatus.classList.remove('hidden');
   animateUploadSuccess();
+  renderPreview(file);
 }
 
 function animateUploadSuccess() {
@@ -134,6 +153,7 @@ function resetUpload(event) {
   setStatus(0, 'Uploading', 'Checking your PDF...');
   clearError();
   stopAnimation();
+  resetPreview();
 }
 
 function downloadSelectedFile(event) {
@@ -152,6 +172,110 @@ function downloadSelectedFile(event) {
   link.click();
   link.remove();
   URL.revokeObjectURL(downloadUrl);
+}
+
+async function renderPreview(file) {
+  const token = ++previewToken;
+  elements.previewPanel.classList.remove('hidden');
+  elements.previewTitle.textContent = 'Loading preview...';
+  elements.pageCount.textContent = '';
+  setPreviewControlsDisabled(true);
+
+  try {
+    const data = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+
+    if (token !== previewToken) return;
+
+    previewPdf = pdf;
+    currentPage = 1;
+    await renderPreviewPage(token);
+  } catch (error) {
+    if (token !== previewToken) return;
+
+    resetPreviewCanvas();
+    elements.previewTitle.textContent = 'Preview unavailable';
+    elements.pageCount.textContent = '';
+    setPreviewControlsDisabled(true);
+    showError('The PDF was selected, but the preview could not be loaded.');
+  }
+}
+
+async function renderPreviewPage(token = previewToken) {
+  if (!previewPdf) return;
+
+  setPreviewControlsDisabled(true);
+
+  if (activeRenderTask) {
+    activeRenderTask.cancel();
+    activeRenderTask = null;
+  }
+
+  try {
+    const page = await previewPdf.getPage(currentPage);
+    const maxWidth = Math.min(elements.previewPanel.clientWidth - 44, 760);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = Math.max(0.8, Math.min(1.55, maxWidth / baseViewport.width));
+    const viewport = page.getViewport({ scale });
+    const context = elements.previewCanvas.getContext('2d');
+
+    elements.previewCanvas.width = Math.floor(viewport.width);
+    elements.previewCanvas.height = Math.floor(viewport.height);
+    elements.previewCanvas.style.width = `${Math.floor(viewport.width)}px`;
+    elements.previewCanvas.style.height = `${Math.floor(viewport.height)}px`;
+
+    activeRenderTask = page.render({ canvasContext: context, viewport });
+    await activeRenderTask.promise;
+
+    if (token !== previewToken) return;
+
+    activeRenderTask = null;
+    elements.previewTitle.textContent = `Page ${currentPage}`;
+    elements.pageCount.textContent = `${currentPage} / ${previewPdf.numPages}`;
+    setPreviewControlsDisabled(false);
+  } catch (error) {
+    if (error?.name === 'RenderingCancelledException') return;
+
+    elements.previewTitle.textContent = 'Preview unavailable';
+    setPreviewControlsDisabled(true);
+  }
+}
+
+function changePreviewPage(delta) {
+  if (!previewPdf) return;
+
+  currentPage = Math.min(Math.max(currentPage + delta, 1), previewPdf.numPages);
+  renderPreviewPage();
+}
+
+function resetPreview() {
+  previewToken += 1;
+
+  if (activeRenderTask) {
+    activeRenderTask.cancel();
+    activeRenderTask = null;
+  }
+
+  previewPdf = null;
+  currentPage = 1;
+  elements.previewPanel.classList.add('hidden');
+  elements.previewTitle.textContent = 'Page 1';
+  elements.pageCount.textContent = '1 / 1';
+  setPreviewControlsDisabled(true);
+  resetPreviewCanvas();
+}
+
+function resetPreviewCanvas() {
+  const context = elements.previewCanvas.getContext('2d');
+  context.clearRect(0, 0, elements.previewCanvas.width, elements.previewCanvas.height);
+  elements.previewCanvas.width = 0;
+  elements.previewCanvas.height = 0;
+}
+
+function setPreviewControlsDisabled(disabled) {
+  const isSinglePage = !previewPdf || previewPdf.numPages <= 1;
+  elements.prevPageButton.disabled = disabled || isSinglePage || currentPage <= 1;
+  elements.nextPageButton.disabled = disabled || isSinglePage || currentPage >= previewPdf.numPages;
 }
 
 function showError(text) {

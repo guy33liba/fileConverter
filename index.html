@@ -60,9 +60,26 @@
         </div>
         <p id="status-text">Checking your PDF...</p>
       </section>
+
+      <section id="preview-panel" class="preview-panel hidden" aria-label="PDF preview">
+        <div class="preview-header">
+          <div>
+            <span class="label">Preview</span>
+            <strong id="preview-title">Page 1</strong>
+          </div>
+          <div class="preview-actions">
+            <button id="prev-page-button" class="button button-secondary" type="button">Previous</button>
+            <span id="page-count" class="page-count">1 / 1</span>
+            <button id="next-page-button" class="button button-secondary" type="button">Next</button>
+          </div>
+        </div>
+        <div class="preview-canvas-wrap">
+          <canvas id="pdf-preview-canvas"></canvas>
+        </div>
+      </section>
     </section>
   </main>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
