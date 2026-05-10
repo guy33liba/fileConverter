@@ -118,6 +118,7 @@ function handleDrop(event) {
 function handleSelectedFile(file) {
   clearError();
   stopAnimation();
+  resetSourceFile();
   resetConvertedFile();
 
   if (!isSupportedImage(file)) {
@@ -321,7 +322,7 @@ function stopAnimation() {
 }
 
 function isSupportedImage(file) {
-  return Boolean(mimeExtensions[file.type]);
+  return Boolean(mimeExtensions[file.type]) || /\.(png|jpe?g|webp)$/i.test(file.name);
 }
 
 function getFormatName(type) {
