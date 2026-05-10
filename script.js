@@ -5,6 +5,7 @@ const elements = {
   filePanel: document.getElementById('file-panel'),
   fileName: document.getElementById('file-name'),
   fileSize: document.getElementById('file-size'),
+  downloadButton: document.getElementById('download-button'),
   removeButton: document.getElementById('remove-button'),
   uploadStatus: document.getElementById('upload-status'),
   statusTitle: document.getElementById('status-title'),
@@ -24,6 +25,7 @@ function setupEvents() {
   elements.dropZone.addEventListener('click', openFilePicker);
   elements.dropZone.addEventListener('keydown', handleKeyboardUpload);
   elements.fileInput.addEventListener('change', handleInputChange);
+  elements.downloadButton.addEventListener('click', downloadSelectedFile);
   elements.removeButton.addEventListener('click', resetUpload);
 
   elements.dropZone.addEventListener('dragover', handleDragOver);
@@ -132,6 +134,24 @@ function resetUpload(event) {
   setStatus(0, 'Uploading', 'Checking your PDF...');
   clearError();
   stopAnimation();
+}
+
+function downloadSelectedFile(event) {
+  event?.stopPropagation();
+
+  if (!selectedFile) {
+    showError('Choose a PDF file before downloading.');
+    return;
+  }
+
+  const downloadUrl = URL.createObjectURL(selectedFile);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = selectedFile.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(downloadUrl);
 }
 
 function showError(text) {

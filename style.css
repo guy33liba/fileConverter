@@ -3,8 +3,8 @@
 }
 
 :root {
-  --bg: #07111f;
-  --bg-2: #12264d;
+  --bg: #1865d8;
+  --bg-2: #19c5e8;
   --card: rgba(19, 34, 64, 0.88);
   --panel: rgba(8, 17, 34, 0.48);
   --text: #ffffff;
@@ -26,10 +26,10 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 14% 10%, rgba(167, 139, 250, 0.34), transparent 24rem),
-    radial-gradient(circle at 86% 22%, rgba(56, 232, 255, 0.25), transparent 22rem),
-    radial-gradient(circle at 70% 86%, rgba(255, 184, 107, 0.14), transparent 24rem),
-    linear-gradient(145deg, var(--bg), var(--bg-2));
+    radial-gradient(circle at 12% 12%, rgba(255, 216, 107, 0.58), transparent 23rem),
+    radial-gradient(circle at 88% 18%, rgba(56, 232, 255, 0.54), transparent 24rem),
+    radial-gradient(circle at 72% 86%, rgba(255, 118, 185, 0.42), transparent 24rem),
+    linear-gradient(145deg, var(--bg), #7c3aed 54%, var(--bg-2));
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
@@ -219,6 +219,13 @@ input:focus-visible {
   min-width: 0;
 }
 
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 .file-panel strong {
   display: block;
   margin-top: 4px;
@@ -315,6 +322,11 @@ input:focus-visible {
   }
 
   .file-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .file-actions {
     flex-direction: column;
     align-items: stretch;
   }
