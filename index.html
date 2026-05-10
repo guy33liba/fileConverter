@@ -10,13 +10,16 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        </script>
         <link rel="stylesheet" href="style.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
         </script>
-        <script src="script.js"></script>
         <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -43,7 +46,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
                         id="file-input"
                         class="file-input"
                         type="file"
-                        accept=".pdf,.png,.jpg,.jpeg,.webp,.avif"
+                        accept=".pdf,.png,.jpg,.jpeg,.webp"
                         aria-label="Choose a file"
                     >
                     <div class="upload-icon" aria-hidden="true">
