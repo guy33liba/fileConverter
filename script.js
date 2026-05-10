@@ -4,7 +4,7 @@ const mimeExtensions = {
   'image/webp': 'webp'
 };
 
-const elements = {
+const elements = { 
   dropZone: document.getElementById('drop-zone'),
   fileInput: document.getElementById('file-input'),
   uploadButton: document.getElementById('upload-button'),
