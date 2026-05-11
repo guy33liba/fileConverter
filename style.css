@@ -21,18 +21,80 @@
 }
 
 body {
+  position: relative;
   margin: 0;
   min-height: 100vh;
   font-size: 18px;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 12% 12%, rgba(255, 216, 107, 0.58), transparent 23rem),
-    radial-gradient(circle at 88% 18%, rgba(56, 232, 255, 0.54), transparent 24rem),
-    radial-gradient(circle at 72% 86%, rgba(255, 118, 185, 0.42), transparent 24rem),
-    linear-gradient(145deg, var(--bg), #7c3aed 54%, var(--bg-2));
+    linear-gradient(120deg, #1456cf, #7c3aed 34%, #0ea5e9 66%, #10b981);
+  background-size: 240% 240%;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+  animation: background-shift 18s ease-in-out infinite;
+}
+
+body::before,
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+}
+
+body::before {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.16) 48%, transparent 62%);
+  background-size: 62px 62px, 62px 62px, 220% 220%;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.58), transparent 82%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.58), transparent 82%);
+  opacity: 0.55;
+  animation: grid-drift 22s linear infinite, sheen-sweep 9s ease-in-out infinite;
+}
+
+body::after {
+  background:
+    conic-gradient(from 140deg at 50% 35%, rgba(255, 255, 255, 0.2), transparent 18%, rgba(56, 232, 255, 0.22), transparent 46%, rgba(255, 184, 107, 0.2), transparent 72%, rgba(167, 139, 250, 0.22), rgba(255, 255, 255, 0.2)),
+    linear-gradient(180deg, rgba(2, 8, 23, 0.02), rgba(2, 8, 23, 0.28));
+  filter: blur(18px) saturate(1.18);
+  opacity: 0.75;
+  transform: scale(1.14);
+  animation: light-rotate 28s linear infinite;
+}
+
+@keyframes background-shift {
+  0%, 100% { background-position: 0% 45%; }
+  50% { background-position: 100% 56%; }
+}
+
+@keyframes grid-drift {
+  from { background-position: 0 0, 0 0, 0% 50%; }
+  to { background-position: 62px 62px, 62px 62px, 100% 50%; }
+}
+
+@keyframes sheen-sweep {
+  0%, 100% { opacity: 0.38; }
+  50% { opacity: 0.68; }
+}
+
+@keyframes light-rotate {
+  from { transform: scale(1.14) rotate(0deg); }
+  to { transform: scale(1.14) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body::before,
+  body::after,
+  .upload-icon,
+  #progress-fill {
+    animation: none;
+  }
 }
 
 button,
@@ -50,6 +112,8 @@ select:focus-visible {
 }
 
 .page-shell {
+  position: relative;
+  z-index: 1;
   width: min(100%, 1030px);
   margin: 0 auto;
   padding: 52px 20px;
