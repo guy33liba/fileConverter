@@ -67,6 +67,46 @@ body::after {
   animation: light-rotate 28s linear infinite;
 }
 
+.emoji-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.emoji-life {
+  position: absolute;
+  left: var(--start-x);
+  top: var(--start-y);
+  display: inline-grid;
+  place-items: center;
+  width: 1em;
+  height: 1em;
+  font-size: var(--emoji-size);
+  line-height: 1;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 16px var(--emoji-glow)) saturate(1.2);
+  transform: translate3d(0, 0, 0) rotate(var(--tilt));
+  animation:
+    emoji-drift var(--speed) ease-in-out infinite alternate,
+    emoji-breathe 4.8s ease-in-out infinite;
+  animation-delay: var(--delay), calc(var(--delay) * -0.55);
+}
+
+.emoji-life:nth-child(1) { --start-x: 4%; --start-y: 12%; --emoji-size: 2.4rem; --speed: 12s; --delay: -1s; --move-x: 14vw; --move-y: 4vh; --tilt: -12deg; --emoji-glow: rgba(52, 211, 153, 0.82); }
+.emoji-life:nth-child(2) { --start-x: 78%; --start-y: 10%; --emoji-size: 2rem; --speed: 15s; --delay: -4s; --move-x: -18vw; --move-y: 6vh; --tilt: 10deg; --emoji-glow: rgba(255, 118, 185, 0.82); }
+.emoji-life:nth-child(3) { --start-x: 12%; --start-y: 34%; --emoji-size: 2.25rem; --speed: 10s; --delay: -7s; --move-x: 22vw; --move-y: -5vh; --tilt: 8deg; --emoji-glow: rgba(56, 232, 255, 0.9); }
+.emoji-life:nth-child(4) { --start-x: 88%; --start-y: 32%; --emoji-size: 2.15rem; --speed: 13s; --delay: -3s; --move-x: -20vw; --move-y: 7vh; --tilt: -8deg; --emoji-glow: rgba(16, 185, 129, 0.85); }
+.emoji-life:nth-child(5) { --start-x: 6%; --start-y: 62%; --emoji-size: 2.35rem; --speed: 16s; --delay: -6s; --move-x: 16vw; --move-y: 8vh; --tilt: 14deg; --emoji-glow: rgba(251, 113, 133, 0.86); }
+.emoji-life:nth-child(6) { --start-x: 82%; --start-y: 60%; --emoji-size: 2.25rem; --speed: 11s; --delay: -2s; --move-x: -24vw; --move-y: -4vh; --tilt: -6deg; --emoji-glow: rgba(251, 191, 36, 0.82); }
+.emoji-life:nth-child(7) { --start-x: 20%; --start-y: 82%; --emoji-size: 1.9rem; --speed: 14s; --delay: -9s; --move-x: 18vw; --move-y: -10vh; --tilt: -16deg; --emoji-glow: rgba(74, 222, 128, 0.82); }
+.emoji-life:nth-child(8) { --start-x: 70%; --start-y: 82%; --emoji-size: 2.2rem; --speed: 17s; --delay: -5s; --move-x: -16vw; --move-y: -8vh; --tilt: 9deg; --emoji-glow: rgba(255, 216, 107, 0.9); }
+.emoji-life:nth-child(9) { --start-x: 48%; --start-y: 16%; --emoji-size: 1.85rem; --speed: 18s; --delay: -8s; --move-x: 13vw; --move-y: 8vh; --tilt: -5deg; --emoji-glow: rgba(52, 211, 153, 0.8); }
+.emoji-life:nth-child(10) { --start-x: 38%; --start-y: 72%; --emoji-size: 1.75rem; --speed: 9s; --delay: -1.5s; --move-x: 20vw; --move-y: -6vh; --tilt: 12deg; --emoji-glow: rgba(255, 255, 255, 0.92); }
+.emoji-life:nth-child(11) { --start-x: 94%; --start-y: 78%; --emoji-size: 2.35rem; --speed: 15s; --delay: -10s; --move-x: -22vw; --move-y: -12vh; --tilt: 8deg; --emoji-glow: rgba(250, 204, 21, 0.9); }
+.emoji-life:nth-child(12) { --start-x: 2%; --start-y: 48%; --emoji-size: 2rem; --speed: 12s; --delay: -4.5s; --move-x: 22vw; --move-y: 2vh; --tilt: -10deg; --emoji-glow: rgba(125, 211, 252, 0.9); }
+
 @keyframes background-shift {
   0%, 100% { background-position: 0% 45%; }
   50% { background-position: 100% 56%; }
@@ -87,10 +127,21 @@ body::after {
   to { transform: scale(1.14) rotate(360deg); }
 }
 
+@keyframes emoji-drift {
+  from { transform: translate3d(0, 0, 0) rotate(var(--tilt)) scale(0.94); }
+  to { transform: translate3d(var(--move-x), var(--move-y), 0) rotate(calc(var(--tilt) * -1)) scale(1.08); }
+}
+
+@keyframes emoji-breathe {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 0.82; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body,
   body::before,
   body::after,
+  .emoji-life,
   .upload-icon,
   #progress-fill {
     animation: none;
@@ -113,7 +164,7 @@ select:focus-visible {
 
 .page-shell {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: min(100%, 1030px);
   margin: 0 auto;
   padding: 52px 20px;
