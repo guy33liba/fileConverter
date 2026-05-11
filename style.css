@@ -469,6 +469,14 @@ select:focus-visible {
   overflow-wrap: anywhere;
 }
 
+#converted-preview-container iframe {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid rgba(186, 230, 253, 0.22);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
 .message {
   margin-bottom: 16px;
   padding: 14px 16px;

@@ -13,8 +13,10 @@ const mimeExtensions = {
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
   'image/avif': 'avif',
+  'application/pdf': 'pdf',
   'text/plain': 'txt'
 };
+const pdfOutput = 'application/pdf';
 const pdfTextOutput = 'pdf-to-text';
 const maxBatchFiles = 100;
 
@@ -272,6 +274,14 @@ function updateOutputOptions() {
     item.textContent = hasPdf && !hasImages ? `PDF to ${option.label}` : option.label;
     imageGroup.appendChild(item);
   });
+
+  if (hasImages) {
+    const option = document.createElement('option');
+    option.value = pdfOutput;
+    option.textContent = hasPdf ? 'PDF (skip PDF files)' : 'PDF';
+    imageGroup.appendChild(option);
+  }
+
   select.appendChild(imageGroup);
 
   if (hasPdf) {
@@ -293,7 +303,7 @@ function updatePdfPageOptions() {
   const hasPdf = batchItems.some((item) => item.isPdf);
   const outputType = elements.outputTypeSelect.value;
 
-  if (!hasPdf || outputType === pdfTextOutput) {
+  if (!hasPdf || outputType === pdfTextOutput || outputType === pdfOutput) {
     elements.pdfPageLabel.style.display = 'none';
     elements.pdfPageSelect.innerHTML = '';
     return;
@@ -508,6 +518,12 @@ async function convertSelectedFiles(event) {
 async function convertBatchItem(item, outputType) {
   item.convertedFiles = [];
 
+  if (outputType === pdfOutput && item.isPdf) {
+    item.status = 'Skipped';
+    item.statusKind = 'ready';
+    return 'skipped';
+  }
+
   if (outputType === pdfTextOutput) {
     if (!item.isPdf) {
       item.status = 'Skipped';
@@ -528,6 +544,11 @@ async function convertBatchItem(item, outputType) {
 }
 
 async function convertImage(item, outputType) {
+  if (outputType === pdfOutput) {
+    await convertImageToPdf(item);
+    return;
+  }
+
   const image = await loadImage(item.sourceUrl);
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -546,6 +567,95 @@ async function convertImage(item, outputType) {
   addConvertedFile(item, blob, buildConvertedFileName(item.file.name, outputType));
   item.status = 'Converted';
   item.statusKind = 'converted';
+}
+
+async function convertImageToPdf(item) {
+  const image = await loadImage(item.sourceUrl);
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0);
+
+  const quality = Number(elements.qualityInput.value) / 100;
+  const jpegBlob = await canvasToBlob(canvas, 'image/jpeg', quality);
+  const pdfBlob = await createImagePdfBlob(jpegBlob, image.naturalWidth, image.naturalHeight, item.file.name);
+
+  addConvertedFile(item, pdfBlob, buildConvertedFileName(item.file.name, pdfOutput));
+  item.status = 'Converted to PDF';
+  item.statusKind = 'converted';
+}
+
+async function createImagePdfBlob(jpegBlob, imageWidth, imageHeight, title) {
+  const imageBytes = new Uint8Array(await jpegBlob.arrayBuffer());
+  const imageRatio = imageWidth / imageHeight;
+  const portrait = imageRatio <= 1;
+  const pageWidth = portrait ? 612 : 792;
+  const pageHeight = portrait ? 792 : 612;
+  const margin = 36;
+  const maxWidth = pageWidth - margin * 2;
+  const maxHeight = pageHeight - margin * 2;
+  const scale = Math.min(maxWidth / imageWidth, maxHeight / imageHeight);
+  const drawWidth = imageWidth * scale;
+  const drawHeight = imageHeight * scale;
+  const drawX = (pageWidth - drawWidth) / 2;
+  const drawY = (pageHeight - drawHeight) / 2;
+  const content = `q\n${formatPdfNumber(drawWidth)} 0 0 ${formatPdfNumber(drawHeight)} ${formatPdfNumber(drawX)} ${formatPdfNumber(drawY)} cm\n/Im0 Do\nQ\n`;
+  const escapedTitle = escapePdfString(title.replace(/\.[^.]+$/, '') || 'Converted image');
+
+  return createPdfBlob([
+    `<< /Type /Catalog /Pages 2 0 R >>`,
+    `<< /Type /Pages /Kids [3 0 R] /Count 1 >>`,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /ProcSet [/PDF /ImageC] /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`,
+    [
+      `<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.byteLength} >>\nstream\n`,
+      imageBytes,
+      '\nendstream'
+    ],
+    `<< /Length ${getAsciiByteLength(content)} >>\nstream\n${content}endstream`,
+    `<< /Title (${escapedTitle}) /Creator (Browser File Converter) >>`
+  ], '6 0 R');
+}
+
+function createPdfBlob(objects, infoRef = '') {
+  const parts = ['%PDF-1.4\n'];
+  const offsets = [0];
+  let offset = getPartsByteLength(parts);
+
+  objects.forEach((object, index) => {
+    offsets[index + 1] = offset;
+    const objectParts = [`${index + 1} 0 obj\n`, ...[].concat(object), '\nendobj\n'];
+    parts.push(...objectParts);
+    offset += getPartsByteLength(objectParts);
+  });
+
+  const xrefOffset = offset;
+  const xrefRows = offsets
+    .map((value, index) => (index === 0 ? '0000000000 65535 f ' : `${String(value).padStart(10, '0')} 00000 n `))
+    .join('\n');
+  const trailer = `xref\n0 ${objects.length + 1}\n${xrefRows}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R${infoRef ? ` /Info ${infoRef}` : ''} >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+
+  parts.push(trailer);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+
+function getPartsByteLength(parts) {
+  return parts.reduce((total, part) => total + (typeof part === 'string' ? getAsciiByteLength(part) : part.byteLength), 0);
+}
+
+function getAsciiByteLength(text) {
+  return new TextEncoder().encode(text).byteLength;
+}
+
+function formatPdfNumber(value) {
+  return Number(value.toFixed(3)).toString();
+}
+
+function escapePdfString(value) {
+  return value.replace(/[\\()]/g, '\\$&').replace(/[\r\n]/g, ' ');
 }
 
 async function convertPdfToImages(item, outputType) {
@@ -703,6 +813,14 @@ function renderActiveConvertedPreview() {
     const text = activeOutput.previewText || '';
     pre.textContent = text.length > 2000 ? `${text.substring(0, 2000)}\n\n... (truncated)` : text;
     elements.convertedPreviewContainer.appendChild(pre);
+    return;
+  }
+
+  if (activeOutput.type === 'application/pdf') {
+    const frame = document.createElement('iframe');
+    frame.title = 'Converted PDF preview';
+    frame.src = activeOutput.url;
+    elements.convertedPreviewContainer.appendChild(frame);
   }
 }
 
