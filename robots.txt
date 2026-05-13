@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://files-convertering.netlify.app/sitemap.xml
+Sitemap: https://browserfileconverter.netlify.app/sitemap.xml
