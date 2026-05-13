@@ -8,4 +8,25 @@
     <loc>https://files-convertering.netlify.app/summarize-pdf.html</loc>
     <lastmod>2026-05-12</lastmod>
   </url>
+
+  <url>
+    <loc>https://browserfileconverter.netlify.app/</loc>
+  </url>
+
+  <url>
+    <loc>https://browserfileconverter.netlify.app/png-to-jpg</loc>
+  </url>
+
+  <url>
+    <loc>https://browserfileconverter.netlify.app/jpg-to-png</loc>
+  </url>
+
+  <url>
+    <loc>https://browserfileconverter.netlify.app/pdf-to-image</loc>
+  </url>
+
+  <url>
+    <loc>https://browserfileconverter.netlify.app/image-compressor</loc>
+  </url>
+
 </urlset>
