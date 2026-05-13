@@ -2,31 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://files-convertering.netlify.app/</loc>
-    <lastmod>2026-05-12</lastmod>
+    <lastmod>2026-05-13</lastmod>
   </url>
   <url>
     <loc>https://files-convertering.netlify.app/summarize-pdf.html</loc>
-    <lastmod>2026-05-12</lastmod>
+    <lastmod>2026-05-13</lastmod>
   </url>
-
   <url>
-    <loc>https://browserfileconverter.netlify.app/</loc>
+    <loc>https://files-convertering.netlify.app/about.html</loc>
+    <lastmod>2026-05-13</lastmod>
   </url>
-
   <url>
-    <loc>https://browserfileconverter.netlify.app/png-to-jpg</loc>
+    <loc>https://files-convertering.netlify.app/privacy-policy.html</loc>
+    <lastmod>2026-05-13</lastmod>
   </url>
-
   <url>
-    <loc>https://browserfileconverter.netlify.app/jpg-to-png</loc>
-  </url>
-
-  <url>
-    <loc>https://browserfileconverter.netlify.app/pdf-to-image</loc>
-  </url>
-
-  <url>
-    <loc>https://browserfileconverter.netlify.app/image-compressor</loc>
+    <loc>https://files-convertering.netlify.app/terms-of-service.html</loc>
+    <lastmod>2026-05-13</lastmod>
   </url>
 
 </urlset>
