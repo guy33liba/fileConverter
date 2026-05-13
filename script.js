@@ -18,7 +18,14 @@ const mimeExtensions = {
 };
 const pdfOutput = 'application/pdf';
 const pdfTextOutput = 'pdf-to-text';
+const pdfSummaryOutput = 'pdf-summary';
 const maxBatchFiles = 100;
+const summaryStopWords = new Set([
+  'about', 'after', 'again', 'also', 'because', 'before', 'between', 'could', 'every', 'from',
+  'have', 'into', 'more', 'most', 'other', 'over', 'such', 'than', 'that', 'their', 'there',
+  'these', 'they', 'this', 'those', 'through', 'under', 'very', 'were', 'what', 'when', 'where',
+  'which', 'while', 'with', 'would', 'your'
+]);
 
 const elements = {
   dropZone: document.getElementById('drop-zone'),
@@ -254,7 +261,7 @@ function updateBatchUi() {
   elements.fileName.textContent = count === 1 ? batchItems[0].file.name : `${count} files selected`;
   elements.fileSize.textContent = formatFileSize(totalSize);
   elements.downloadOriginalButton.textContent = count === 1 ? 'Download Original' : 'Download Originals';
-  elements.convertButton.textContent = count === 1 ? 'Convert File' : `Convert ${count} Files`;
+  updateConvertButtonText();
 }
 
 function updateOutputOptions() {
@@ -287,10 +294,15 @@ function updateOutputOptions() {
   if (hasPdf) {
     const pdfGroup = document.createElement('optgroup');
     pdfGroup.label = 'From PDF';
-    const option = document.createElement('option');
-    option.value = pdfTextOutput;
-    option.textContent = hasImages ? 'Extract PDF text (skip images)' : 'PDF to Text (TXT)';
-    pdfGroup.appendChild(option);
+    const textOption = document.createElement('option');
+    textOption.value = pdfTextOutput;
+    textOption.textContent = hasImages ? 'Extract PDF text (skip images)' : 'PDF to Text (TXT)';
+    pdfGroup.appendChild(textOption);
+
+    const summaryOption = document.createElement('option');
+    summaryOption.value = pdfSummaryOutput;
+    summaryOption.textContent = hasImages ? 'PDF Summary (skip images)' : 'PDF Summary (Smart)';
+    pdfGroup.appendChild(summaryOption);
     select.appendChild(pdfGroup);
   }
 
@@ -303,7 +315,7 @@ function updatePdfPageOptions() {
   const hasPdf = batchItems.some((item) => item.isPdf);
   const outputType = elements.outputTypeSelect.value;
 
-  if (!hasPdf || outputType === pdfTextOutput || outputType === pdfOutput) {
+  if (!hasPdf || [pdfTextOutput, pdfSummaryOutput, pdfOutput].includes(outputType)) {
     elements.pdfPageLabel.style.display = 'none';
     elements.pdfPageSelect.innerHTML = '';
     return;
@@ -344,9 +356,28 @@ function handleOutputTypeChange(options = {}) {
   }
 
   const outputType = elements.outputTypeSelect.value;
-  elements.qualityLabel.style.display = outputType === pdfTextOutput ? 'none' : '';
+  elements.qualityLabel.style.display = [pdfTextOutput, pdfSummaryOutput].includes(outputType) ? 'none' : '';
+  updateConvertButtonText();
   updatePdfPageOptions();
   renderConvertedPreview();
+}
+
+function updateConvertButtonText() {
+  const count = batchItems.length;
+  const pdfCount = batchItems.filter((item) => item.isPdf).length;
+  const outputType = elements.outputTypeSelect.value;
+
+  if (outputType === pdfSummaryOutput) {
+    elements.convertButton.textContent = pdfCount > 1 ? `Summarize ${pdfCount} PDFs` : 'Summarize PDF';
+    return;
+  }
+
+  if (outputType === pdfTextOutput) {
+    elements.convertButton.textContent = pdfCount > 1 ? `Extract Text from ${pdfCount} PDFs` : 'Extract PDF Text';
+    return;
+  }
+
+  elements.convertButton.textContent = count === 1 ? 'Convert File' : `Convert ${count} Files`;
 }
 
 async function handlePdfPageChange() {
@@ -534,6 +565,16 @@ async function convertBatchItem(item, outputType) {
     return 'converted';
   }
 
+  if (outputType === pdfSummaryOutput) {
+    if (!item.isPdf) {
+      item.status = 'Skipped';
+      item.statusKind = 'ready';
+      return 'skipped';
+    }
+    await summarizePdf(item);
+    return 'converted';
+  }
+
   if (item.isPdf) {
     await convertPdfToImages(item, outputType);
     return 'converted';
@@ -703,12 +744,37 @@ async function extractPdfText(item) {
     throw new Error('PDF is not loaded');
   }
 
+  const fullText = await extractPdfTextContent(item, 'Extracting text');
+
+  const blob = new Blob([fullText], { type: 'text/plain' });
+  const baseName = item.file.name.replace(/\.pdf$/i, '') || 'converted';
+  addConvertedFile(item, blob, `${baseName}.txt`, fullText);
+  item.status = 'Text extracted';
+  item.statusKind = 'converted';
+}
+
+async function summarizePdf(item) {
+  if (!item.pdfDoc) {
+    throw new Error('PDF is not loaded');
+  }
+
+  const fullText = await extractPdfTextContent(item, 'Summarizing PDF');
+  const summary = buildPdfSummary(fullText, item.file.name);
+  const blob = new Blob([summary], { type: 'text/plain' });
+  const baseName = item.file.name.replace(/\.pdf$/i, '') || 'summary';
+
+  addConvertedFile(item, blob, `${baseName}-summary.txt`, summary);
+  item.status = 'Summary ready';
+  item.statusKind = 'converted';
+}
+
+async function extractPdfTextContent(item, statusTitle) {
   let fullText = '';
 
   for (let pageNum = 1; pageNum <= item.pdfDoc.numPages; pageNum++) {
     setStatus(
       20 + Math.round((pageNum / item.pdfDoc.numPages) * 70),
-      'Extracting text',
+      statusTitle,
       `${item.file.name}: page ${pageNum} of ${item.pdfDoc.numPages}...`
     );
 
@@ -718,11 +784,69 @@ async function extractPdfText(item) {
     fullText += `--- Page ${pageNum} ---\n${pageText}\n\n`;
   }
 
-  const blob = new Blob([fullText], { type: 'text/plain' });
-  const baseName = item.file.name.replace(/\.pdf$/i, '') || 'converted';
-  addConvertedFile(item, blob, `${baseName}.txt`, fullText);
-  item.status = 'Text extracted';
-  item.statusKind = 'converted';
+  return fullText;
+}
+
+function buildPdfSummary(text, fileName) {
+  const normalizedText = text
+    .replace(/--- Page \d+ ---/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const title = fileName.replace(/\.pdf$/i, '') || 'PDF';
+
+  if (!normalizedText) {
+    return `Summary: ${title}\n\nNo selectable text was found in this PDF. It may be scanned or image-based.`;
+  }
+
+  const sentences = splitIntoSentences(normalizedText);
+  const selectedSentences = chooseSummarySentences(sentences);
+
+  if (!selectedSentences.length) {
+    return `Summary: ${title}\n\n${normalizedText.slice(0, 1200)}`;
+  }
+
+  return [
+    `Summary: ${title}`,
+    '',
+    'Key points:',
+    ...selectedSentences.map((sentence) => `- ${sentence}`)
+  ].join('\n');
+}
+
+function splitIntoSentences(text) {
+  const matches = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
+  return matches
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.split(/\s+/).length >= 6)
+    .slice(0, 160);
+}
+
+function chooseSummarySentences(sentences) {
+  const wordCounts = new Map();
+
+  sentences.forEach((sentence) => {
+    getSummaryWords(sentence).forEach((word) => {
+      wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+    });
+  });
+
+  return sentences
+    .map((sentence, index) => ({
+      sentence,
+      index,
+      score: getSummaryWords(sentence).reduce((sum, word) => sum + (wordCounts.get(word) || 0), 0)
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, 6)
+    .sort((a, b) => a.index - b.index)
+    .map((entry) => entry.sentence);
+}
+
+function getSummaryWords(sentence) {
+  return sentence
+    .toLowerCase()
+    .match(/[a-z0-9]{4,}/g)
+    ?.filter((word) => !summaryStopWords.has(word)) || [];
 }
 
 function getPdfPagesToConvert(item) {
