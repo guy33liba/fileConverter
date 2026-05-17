@@ -165,12 +165,67 @@ select:focus-visible {
   outline-offset: 3px;
 }
 
+.site-nav {
+  position: relative;
+  z-index: 3;
+  width: min(100% - 32px, 1030px);
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 18px auto 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(226, 236, 255, 0.22);
+  border-radius: 16px;
+  background: rgba(8, 17, 34, 0.76);
+  box-shadow: 0 18px 48px rgba(2, 8, 23, 0.22);
+  backdrop-filter: blur(8px);
+}
+
+.site-logo,
+.nav-links a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.site-logo {
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nav-links a {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 0 0.72rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.nav-links a:hover,
+.nav-links a[aria-current="page"] {
+  color: #ffffff;
+  background: rgba(56, 232, 255, 0.14);
+}
+
 .page-shell {
   position: relative;
   z-index: 2;
   width: min(100%, 1030px);
   margin: 0 auto;
-  padding: 52px 20px;
+  padding: 34px 20px 52px;
 }
 
 .hero {
@@ -664,6 +719,24 @@ select:focus-visible {
 @media (max-width: 680px) {
   .emoji-bg {
     opacity: 0.3;
+  }
+
+  .site-nav {
+    width: min(100% - 24px, 1030px);
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .nav-links {
+    justify-content: flex-start;
+  }
+
+  .nav-links a {
+    min-height: 36px;
+    padding: 0 0.62rem;
+    font-size: 0.84rem;
   }
 
   .page-shell {
