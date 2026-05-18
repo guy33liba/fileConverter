@@ -520,11 +520,11 @@ body[data-background-theme="summarizer"] .site-nav {
 }
 
 body[data-background-theme="summarizer"] .hero h1 {
-  color: #14310f;
+  color: #cee8fae5;
 }
 
 body[data-background-theme="summarizer"] .hero-text {
-  color: #365314;
+  color: #cee8fad8;
 }
 
 .upload-card {
