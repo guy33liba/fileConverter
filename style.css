@@ -1115,7 +1115,7 @@ body[data-background-theme="summarizer"] .hero-text {
 .content-section a {
   color: #67e8f9;
   font-weight: 900;
-  text-decoration-color: rgba(103, 232, 249, 0.72);
+  text-decoration-color: rgba(141, 228, 240, 0.39);
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
   transition: color 180ms ease, text-decoration-color 180ms ease, text-shadow 180ms ease;
