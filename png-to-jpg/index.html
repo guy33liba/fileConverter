@@ -4,27 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Convert PNG to JPG Online Free | File Converter</title>
-  <meta name="description" content="Convert PNG images to JPG online for free using the same private browser-based file converter. No signup and no file upload required.">
+  <meta name="description" content="Convert PNG images to JPG online for free in your browser. No signup, no upload required, and the same simple File Converter tool.">
   <link rel="canonical" href="https://browserfileconverter.netlify.app/png-to-jpg/">
   <meta property="og:title" content="Convert PNG to JPG Online Free | File Converter">
-  <meta property="og:description" content="Convert PNG images to JPG online for free using the same private browser-based file converter. No signup and no file upload required.">
+  <meta property="og:description" content="Convert PNG images to JPG online for free in your browser. No signup, no upload required, and the same simple File Converter tool.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://browserfileconverter.netlify.app/png-to-jpg/">
   <meta property="og:image" content="https://browserfileconverter.netlify.app/og-image.png">
   <meta property="og:site_name" content="File Converter">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Convert PNG to JPG Online Free | File Converter">
-  <meta name="twitter:description" content="Convert PNG images to JPG online for free using the same private browser-based file converter. No signup and no file upload required.">
+  <meta name="twitter:description" content="Convert PNG images to JPG online for free in your browser. No signup, no upload required, and the same simple File Converter tool.">
   <meta name="twitter:image" content="https://browserfileconverter.netlify.app/og-image.png">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="/style.css">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "Convert PNG to JPG Online Free",
-  "url": "https://browserfileconverter.netlify.app/png-to-jpg/",
-  "description": "Convert PNG images to JPG online using File Converter."
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I convert PNG to JPG?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Upload your PNG image, choose JPG as the output format, and download the converted file."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are PNG files uploaded?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Files are processed in your browser and are not uploaded for conversion."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "When should I use JPG instead of PNG?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "JPG is often better for photos and smaller file sizes, while PNG is better for transparency and sharp graphics."
+      }
+    }
+  ]
 }
   </script>
 </head>
@@ -43,22 +66,59 @@
   <main class="page-shell">
     <section class="hero" aria-labelledby="page-title">
       <h1 id="page-title">Convert PNG to JPG Online</h1>
-      <p class="hero-text">Use the main File Converter tool to turn PNG images into JPG files directly in your browser.</p>
+      <p class="hero-text">Upload a PNG image, choose JPG, and download the converted file. Files are processed in your browser.</p>
     </section>
-    <section class="upload-card">
-      <p>Open the converter, choose your PNG file, select JPG as the output format, and download the converted image. Files are processed in your browser and are not uploaded for conversion.</p>
-      <p><a class="button" href="/#drop-zone">Open the PNG to JPG converter</a></p>
+    <section class="upload-card" aria-label="PNG to JPG converter">
+      <div id="message" class="message hidden" role="alert"></div>
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="File upload area">
+        <input id="file-input" class="file-input" type="file" multiple aria-label="Choose files">
+        <div class="upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <circle cx="8.5" cy="10" r="1.5"/>
+            <path d="m21 15-4.4-4.4a2 2 0 0 0-2.8 0L5 19"/>
+          </svg>
+        </div>
+        <h2>Drop files here</h2>
+        <p>Upload a PNG image, then select JPG as the output format.</p>
+        <button id="upload-button" class="button" type="button">Choose Files</button>
+      </div>
+      <section id="file-panel" class="file-panel hidden" aria-live="polite">
+        <div class="file-panel-header">
+          <div class="file-meta"><span class="label" style="font-size: large;">Selected files</span><strong id="file-name">No files selected</strong><small id="file-size"></small></div>
+          <div class="file-actions"><button id="download-original-button" class="button" type="button">Download Originals</button><button id="remove-button" class="button button-secondary" type="button">Remove All</button></div>
+        </div>
+        <div id="file-list" class="file-list"></div>
+      </section>
+      <section id="converter-panel" class="converter-panel hidden" aria-label="Conversion settings">
+        <div class="converter-grid">
+          <label class="control-group" for="output-type-select"><span class="label">Output format</span><select id="output-type-select"><optgroup label="Image to Image"><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option><option value="application/pdf">PDF</option></optgroup><optgroup label="From PDF"><option value="pdf-to-png">PDF to PNG</option><option value="pdf-to-jpg">PDF to JPG</option><option value="pdf-to-webp">PDF to WebP</option><option value="pdf-to-text">PDF to Text (TXT)</option><option value="pdf-summary">PDF Summary (Smart)</option></optgroup></select></label>
+          <label class="control-group" for="pdf-page-select" id="pdf-page-label" style="display:none;"><span class="label">Pages</span><select id="pdf-page-select"></select></label>
+          <label class="control-group" for="quality-input" id="quality-label"><span class="label">Quality <strong id="quality-value">92%</strong></span><input id="quality-input" type="range" min="40" max="100" value="92"></label>
+        </div>
+        <button id="convert-button" class="button button-wide" type="button">Convert Files</button>
+      </section>
+      <section id="upload-status" class="upload-status hidden" aria-live="polite"><div class="status-header"><span id="status-title">Ready</span><span id="status-percent">0%</span></div><div class="progress-bar" aria-hidden="true"><div id="progress-fill"></div></div><p id="status-text">Choose a file to start.</p></section>
+      <section id="preview-panel" class="preview-panel hidden" aria-label="File previews">
+        <div class="preview-header"><div><span class="label">Preview</span><strong id="preview-title">Original file</strong></div><button id="download-converted-button" class="button hidden" type="button">Download Converted</button></div>
+        <div class="preview-grid"><figure class="preview-box"><figcaption>Original</figcaption><div id="source-preview-container"></div></figure><figure id="converted-preview-box" class="preview-box hidden"><figcaption>Converted</figcaption><div id="converted-preview-container"></div></figure></div>
+      </section>
+    </section>
+    <section class="content-section" aria-labelledby="png-copy-title">
+      <h2 id="png-copy-title">PNG to JPG Conversion</h2>
+      <p>PNG is great for transparent graphics, while JPG is often smaller and convenient for photos, email, and uploads. This page uses the same converter tool as the homepage.</p>
+    </section>
+    <section class="content-section" aria-labelledby="png-faq-title">
+      <h2 id="png-faq-title">Frequently Asked Questions</h2>
+      <div class="faq-list">
+        <details><summary>How do I convert PNG to JPG?</summary><p>Upload your PNG image, choose JPG as the output format, and download the converted file.</p></details>
+        <details><summary>Are PNG files uploaded?</summary><p>No. Files are processed in your browser and are not uploaded for conversion.</p></details>
+        <details><summary>When should I use JPG instead of PNG?</summary><p>JPG is often better for photos and smaller file sizes, while PNG is better for transparency and sharp graphics.</p></details>
+      </div>
     </section>
   </main>
-  <footer class="site-footer">
-    <nav aria-label="Footer navigation">
-      <a href="/">Converter</a>
-      <a href="/summarize-pdf.html">Summarize PDF</a>
-      <a href="/about.html">About</a>
-      <a href="/privacy-policy.html">Privacy Policy</a>
-      <a href="/terms-of-service.html">Terms of Service</a>
-    </nav>
-  </footer>
+  <footer class="site-footer"><nav aria-label="Footer navigation"><a href="/">Converter</a><a href="/summarize-pdf.html">Summarize PDF</a><a href="/about.html">About</a><a href="/privacy-policy.html">Privacy Policy</a><a href="/terms-of-service.html">Terms of Service</a></nav></footer>
   <script src="/theme-toggle.js" defer></script>
+  <script type="module" src="/script.js"></script>
 </body>
 </html>
