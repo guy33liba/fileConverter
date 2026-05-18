@@ -44,7 +44,7 @@ body {
 
 body[data-background-theme="summarizer"] {
   color: #97ddf8;
-  background: linear-gradient(135deg, #fefce8 0%, #ecfccb 46%, #dcfce7 100%);
+  background: linear-gradient(135deg, #758388 0%, #4c879e 46%, #6e8175 100%);
   background-size: 100% 100%;
   animation: none;
 }
