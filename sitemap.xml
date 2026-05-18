@@ -37,6 +37,36 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://browserfileconverter.netlify.app/extract-pdf-text/</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://browserfileconverter.netlify.app/pdf-text-extractor/</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://browserfileconverter.netlify.app/copy-pdf-content/</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://browserfileconverter.netlify.app/pdf-to-text-online/</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://browserfileconverter.netlify.app/read-pdf-content/</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://browserfileconverter.netlify.app/about.html</loc>
     <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
