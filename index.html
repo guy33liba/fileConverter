@@ -3,13 +3,81 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>File Converter</title>
-        <meta name="description" content="Convert files between PNG, JPG, WebP, and PDF in your browser.">
-        <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+        <title>Free Online File Converter – PNG, JPG, WebP, PDF | No Upload Required</title>
+        <meta name="description" content="Convert images and PDFs directly in your browser. Support for PNG, JPG, WebP, AVIF, and PDF — no upload, no signup, 100% free and private.">
+        <link rel="canonical" href="https://browserfileconverter.netlify.app/">
+        <meta property="og:title" content="Free Online File Converter – PNG, JPG, WebP, PDF | No Upload Required">
+        <meta property="og:description" content="Convert images and PDFs directly in your browser. Support for PNG, JPG, WebP, AVIF, and PDF — no upload, no signup, 100% free and private.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://browserfileconverter.netlify.app/">
+        <meta property="og:image" content="https://browserfileconverter.netlify.app/og-image.png">
+        <meta property="og:site_name" content="File Converter">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Free Online File Converter – PNG, JPG, WebP, PDF | No Upload Required">
+        <meta name="twitter:description" content="Convert images and PDFs directly in your browser. Support for PNG, JPG, WebP, AVIF, and PDF — no upload, no signup, 100% free and private.">
+        <meta name="twitter:image" content="https://browserfileconverter.netlify.app/og-image.png">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
+        <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "File Converter",
+  "url": "https://browserfileconverter.netlify.app",
+  "description": "Free browser-based file converter for images and PDFs. No upload required.",
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "browserRequirements": "Requires a modern web browser"
+}
+        </script>
+        <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is this file converter really free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, completely free with no signup or payment required."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are my files uploaded to a server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. All conversions happen directly in your browser. Your files never leave your device."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What file formats are supported?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can convert between PNG, JPG, WebP, AVIF, and PDF formats."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work on mobile?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The converter works in any modern browser on desktop, tablet, or mobile."
+      }
+    }
+  ]
+}
+        </script>
         <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-FRZ4J2LEX8"></script>
         <script>
@@ -32,18 +100,18 @@
             </nav>
         </header>
         <div class="emoji-bg" aria-hidden="true">
-            <span class="emoji-life">✨</span>
-            <span class="emoji-life">🟡</span>
-            <span class="emoji-life">💫</span>
-            <span class="emoji-life">✨</span>
-            <span class="emoji-life">🟡</span>
-            <span class="emoji-life">💫</span>
-            <span class="emoji-life">✨</span>
-            <span class="emoji-life">🟡</span>
-            <span class="emoji-life">💫</span>
-            <span class="emoji-life">✨</span>
-            <span class="emoji-life">🟡</span>
-            <span class="emoji-life">💫</span>
+            <span class="emoji-life" aria-hidden="true">✨</span>
+            <span class="emoji-life" aria-hidden="true">🟡</span>
+            <span class="emoji-life" aria-hidden="true">💫</span>
+            <span class="emoji-life" aria-hidden="true">✨</span>
+            <span class="emoji-life" aria-hidden="true">🟡</span>
+            <span class="emoji-life" aria-hidden="true">💫</span>
+            <span class="emoji-life" aria-hidden="true">✨</span>
+            <span class="emoji-life" aria-hidden="true">🟡</span>
+            <span class="emoji-life" aria-hidden="true">💫</span>
+            <span class="emoji-life" aria-hidden="true">✨</span>
+            <span class="emoji-life" aria-hidden="true">🟡</span>
+            <span class="emoji-life" aria-hidden="true">💫</span>
         </div>
         <main class="page-shell">
             <section class="hero" aria-labelledby="page-title">
@@ -57,7 +125,7 @@
                     class="drop-zone"
                     tabindex="0"
                     role="button"
-                    aria-label="Upload file by clicking or dragging"
+                    aria-label="File upload area"
                 >
                     <input
                         id="file-input"
@@ -177,7 +245,79 @@
                     </div>
                 </section>
             </section>
+            <section class="content-section" aria-labelledby="supported-formats-title">
+                <h2 id="supported-formats-title">Supported Formats</h2>
+                <div class="format-grid">
+                    <article class="format-item">
+                        <h3>PNG</h3>
+                        <p>Lossless image format, great for graphics with transparency.</p>
+                    </article>
+                    <article class="format-item">
+                        <h3>JPG</h3>
+                        <p>Compressed image format, ideal for photos.</p>
+                    </article>
+                    <article class="format-item">
+                        <h3>WebP</h3>
+                        <p>Modern format with smaller file sizes and good quality.</p>
+                    </article>
+                    <article class="format-item">
+                        <h3>AVIF</h3>
+                        <p>Next-gen format with excellent compression.</p>
+                    </article>
+                    <article class="format-item">
+                        <h3>PDF</h3>
+                        <p>Portable document format for text and images.</p>
+                    </article>
+                </div>
+            </section>
+            <section class="content-section" aria-labelledby="how-it-works-title">
+                <h2 id="how-it-works-title">How It Works</h2>
+                <ol class="step-list">
+                    <li>Upload your file by dragging and dropping it or browsing from your device.</li>
+                    <li>Choose your target format from the dropdown.</li>
+                    <li>Download your converted file instantly.</li>
+                </ol>
+            </section>
+            <section class="content-section" aria-labelledby="why-choose-title">
+                <h2 id="why-choose-title">Why Choose File Converter?</h2>
+                <ul class="benefit-list">
+                    <li><strong>100% Free</strong> — No payment, no signup, no limits.</li>
+                    <li><strong>Private</strong> — Files never leave your device.</li>
+                    <li><strong>Fast</strong> — Instant conversion powered by your browser.</li>
+                    <li><strong>No Software Needed</strong> — Works in Chrome, Firefox, Safari, Edge.</li>
+                </ul>
+            </section>
+            <section class="content-section" aria-labelledby="faq-title">
+                <h2 id="faq-title">Frequently Asked Questions</h2>
+                <div class="faq-list">
+                    <details>
+                        <summary>Is this file converter really free?</summary>
+                        <p>Yes, completely free with no signup or payment required.</p>
+                    </details>
+                    <details>
+                        <summary>Are my files uploaded to a server?</summary>
+                        <p>No. All conversions happen directly in your browser. Your files never leave your device.</p>
+                    </details>
+                    <details>
+                        <summary>What file formats are supported?</summary>
+                        <p>You can convert between PNG, JPG, WebP, AVIF, and PDF formats.</p>
+                    </details>
+                    <details>
+                        <summary>Does it work on mobile?</summary>
+                        <p>Yes. The converter works in any modern browser on desktop, tablet, or mobile.</p>
+                    </details>
+                </div>
+            </section>
         </main>
+        <footer class="site-footer">
+            <nav aria-label="Footer navigation">
+                <a href="/">Converter</a>
+                <a href="/summarize-pdf.html">Summarize PDF</a>
+                <a href="/about.html">About</a>
+                <a href="/privacy-policy.html">Privacy Policy</a>
+                <a href="/terms-of-service.html">Terms of Service</a>
+            </nav>
+        </footer>
         <script type="module" src="script.js"></script>
     </body>
 </html>
