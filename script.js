@@ -19,6 +19,7 @@ const mimeExtensions = {
 const pdfOutput = 'application/pdf';
 const pdfTextOutput = 'pdf-to-text';
 const pdfSummaryOutput = 'pdf-summary';
+const textToPdfOutput = 'text-to-pdf';
 const maxBatchFiles = 100;
 const summaryStopWords = new Set([
   'about', 'after', 'again', 'also', 'because', 'before', 'between', 'could', 'every', 'from',
@@ -166,7 +167,7 @@ async function handleSelectedFiles(files) {
   const invalidCount = limitedFiles.length - validFiles.length;
 
   if (!validFiles.length) {
-    showError('Unsupported file type. Please upload PDFs or images (PNG, JPG, WebP, AVIF).');
+    showError('Unsupported file type. Please upload PDFs, text files, or images (TXT, PNG, JPG, WebP, AVIF).');
     return;
   }
 
@@ -211,11 +212,13 @@ async function handleSelectedFiles(files) {
 
 function createBatchItem(file) {
   const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  const isText = file.type === 'text/plain' || /\.txt$/i.test(file.name);
 
   return {
     id: `file-${Date.now()}-${itemIdCounter++}`,
     file,
     isPdf,
+    isText,
     sourceUrl: URL.createObjectURL(file),
     pdfDoc: null,
     pdfError: '',
@@ -267,7 +270,8 @@ function updateBatchUi() {
 function updateOutputOptions() {
   const previousValue = elements.outputTypeSelect.value;
   const hasPdf = batchItems.some((item) => item.isPdf);
-  const hasImages = batchItems.some((item) => !item.isPdf);
+  const hasImages = batchItems.some((item) => !item.isPdf && !item.isText);
+  const hasText = batchItems.some((item) => item.isText);
   const select = elements.outputTypeSelect;
 
   select.innerHTML = '';
@@ -282,7 +286,7 @@ function updateOutputOptions() {
     imageGroup.appendChild(item);
   });
 
-  if (hasImages) {
+  if (hasImages || hasText) {
     const option = document.createElement('option');
     option.value = pdfOutput;
     option.textContent = hasPdf ? 'PDF (skip PDF files)' : 'PDF';
@@ -296,18 +300,29 @@ function updateOutputOptions() {
     pdfGroup.label = 'From PDF';
     const textOption = document.createElement('option');
     textOption.value = pdfTextOutput;
-    textOption.textContent = hasImages ? 'Extract PDF text (skip images)' : 'PDF to Text (TXT)';
+    textOption.textContent = hasImages || hasText ? 'Extract PDF text (skip other files)' : 'PDF to Text (TXT)';
     pdfGroup.appendChild(textOption);
 
     const summaryOption = document.createElement('option');
     summaryOption.value = pdfSummaryOutput;
-    summaryOption.textContent = hasImages ? 'PDF Summary (skip images)' : 'PDF Summary (Smart)';
+    summaryOption.textContent = hasImages || hasText ? 'PDF Summary (skip other files)' : 'PDF Summary (Smart)';
     pdfGroup.appendChild(summaryOption);
     select.appendChild(pdfGroup);
   }
 
+  if (hasText) {
+    const textGroup = document.createElement('optgroup');
+    textGroup.label = 'From text';
+    const textToPdfOption = document.createElement('option');
+    textToPdfOption.value = textToPdfOutput;
+    textToPdfOption.textContent = hasPdf || hasImages ? 'Text to PDF (skip other files)' : 'Text to PDF';
+    textGroup.appendChild(textToPdfOption);
+    select.appendChild(textGroup);
+  }
+
   const hasPrevious = Array.from(select.options).some((option) => option.value === previousValue);
-  select.value = hasPrevious ? previousValue : 'image/png';
+  const defaultValue = hasPrevious ? previousValue : hasText && !hasPdf && !hasImages ? textToPdfOutput : 'image/png';
+  select.value = defaultValue;
   handleOutputTypeChange({ resetConverted: false });
 }
 
@@ -431,7 +446,26 @@ async function showActivePreview() {
     return;
   }
 
+  if (item.isText) {
+    await showTextPreview(item);
+    return;
+  }
+
   await showImagePreview(item);
+}
+
+async function showTextPreview(item) {
+  try {
+    const content = await item.file.text();
+    const pre = document.createElement('pre');
+    pre.textContent = content.length > 2000 ? `${content.substring(0, 2000)}
+
+... (truncated)` : content;
+    elements.sourcePreviewContainer.innerHTML = '';
+    elements.sourcePreviewContainer.appendChild(pre);
+  } catch (error) {
+    elements.sourcePreviewContainer.innerHTML = '<p>Preview not available</p>';
+  }
 }
 
 async function showImagePreview(item) {
@@ -555,6 +589,16 @@ async function convertBatchItem(item, outputType) {
     return 'skipped';
   }
 
+  if (outputType === textToPdfOutput) {
+    if (!item.isText) {
+      item.status = 'Skipped';
+      item.statusKind = 'ready';
+      return 'skipped';
+    }
+    await convertTextToPdf(item);
+    return 'converted';
+  }
+
   if (outputType === pdfTextOutput) {
     if (!item.isPdf) {
       item.status = 'Skipped';
@@ -580,12 +624,27 @@ async function convertBatchItem(item, outputType) {
     return 'converted';
   }
 
+  if (item.isText) {
+    if (outputType === pdfOutput) {
+      await convertTextToPdf(item);
+      return 'converted';
+    }
+
+    item.status = 'Skipped';
+    item.statusKind = 'ready';
+    return 'skipped';
+  }
+
   await convertImage(item, outputType);
   return 'converted';
 }
 
 async function convertImage(item, outputType) {
   if (outputType === pdfOutput) {
+    if (item.isText) {
+      await convertTextToPdf(item);
+      return;
+    }
     await convertImageToPdf(item);
     return;
   }
@@ -869,6 +928,101 @@ function addConvertedFile(item, blob, name, previewText = '') {
     sourceName: item.file.name,
     previewText
   });
+}
+
+async function convertTextToPdf(item) {
+  const text = await item.file.text();
+  const pdfBlob = createTextPdfBlob(text, item.file.name.replace(/\.txt$/i, '') || 'Converted text');
+  addConvertedFile(item, pdfBlob, buildConvertedFileName(item.file.name, pdfOutput));
+  item.status = 'Converted to PDF';
+  item.statusKind = 'converted';
+}
+
+function createTextPdfBlob(text, title) {
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const margin = 72;
+  const lineHeight = 14;
+  const maxLineLength = 90;
+
+  const normalizedText = text.replace(/\r\n?/g, '\n');
+  const lines = [];
+
+  normalizedText.split('\n').forEach((rawLine) => {
+    if (!rawLine) {
+      lines.push('');
+      return;
+    }
+
+    const words = rawLine.split(' ');
+    let currentLine = '';
+
+    words.forEach((word) => {
+      if (!currentLine) {
+        currentLine = word;
+        return;
+      }
+
+      const nextLine = `${currentLine} ${word}`;
+      if (nextLine.length <= maxLineLength) {
+        currentLine = nextLine;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    });
+
+    if (currentLine || rawLine === '') {
+      lines.push(currentLine);
+    }
+  });
+
+  const maxLinesPerPage = Math.floor((pageHeight - margin * 2) / lineHeight);
+  const pages = [];
+
+  for (let index = 0; index < lines.length; index += maxLinesPerPage) {
+    pages.push(lines.slice(index, index + maxLinesPerPage));
+  }
+
+  if (!pages.length) {
+    pages.push(['']);
+  }
+
+  const pageObjects = [];
+  const contentObjects = [];
+
+  pages.forEach((pageLines) => {
+    let pageContent = ['BT', '/F1 12 Tf', `${margin} ${pageHeight - margin - lineHeight} Td`];
+
+    pageLines.forEach((line, lineIndex) => {
+      pageContent.push(`(${escapePdfString(line)}) Tj`);
+      if (lineIndex < pageLines.length - 1) {
+        pageContent.push('T*');
+      }
+    });
+
+    pageContent.push('ET');
+    const pageContentText = pageContent.join('\n');
+    const contentBytes = new TextEncoder().encode(pageContentText);
+    contentObjects.push([`<< /Length ${contentBytes.byteLength} >>\nstream\n`, contentBytes, '\nendstream']);
+  });
+
+  const kids = pages.map((_, index) => `${4 + index * 2} 0 R`).join(' ');
+
+  pages.forEach((_, index) => {
+    const contentRef = 5 + index * 2;
+    pageObjects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentRef} 0 R >>`);
+  });
+
+  const objects = [
+    `<< /Type /Catalog /Pages 2 0 R >>`,
+    `<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`,
+    `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`,
+    ...pageObjects,
+    ...contentObjects
+  ];
+
+  return createPdfBlob(objects, '');
 }
 
 function renderConvertedPreview() {
@@ -1237,11 +1391,15 @@ function getAllConvertedFiles() {
 }
 
 function isSupportedFile(file) {
-  return isPdfFile(file) || isSupportedImage(file);
+  return isPdfFile(file) || isSupportedImage(file) || isTextFile(file);
 }
 
 function isPdfFile(file) {
   return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+}
+
+function isTextFile(file) {
+  return file.type === 'text/plain' || /\.txt$/i.test(file.name);
 }
 
 function isSupportedImage(file) {
@@ -1258,6 +1416,9 @@ function clampPage(page, totalPages) {
 function getFormatName(type) {
   if (!type) {
     return 'Image';
+  }
+  if (type === 'text/plain') {
+    return 'TXT';
   }
   const ext = type.split('/')[1]?.toUpperCase() || 'Image';
   return ext === 'JPEG' ? 'JPG' : ext;
